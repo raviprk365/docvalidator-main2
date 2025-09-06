@@ -100,7 +100,16 @@ export function UploadArea() {
   const uploadFiles = async () => {
     const pendingFiles = files.filter(f => f.status === 'pending')
     
-    for (const fileItem of pendingFiles) {
+    if (pendingFiles.length === 0) return
+    
+    // Show initial toast for multiple file upload
+    toast({
+      title: "Starting uploads",
+      description: `Uploading ${pendingFiles.length} file${pendingFiles.length > 1 ? 's' : ''} simultaneously...`
+    })
+    
+    // Process all files simultaneously using Promise.all
+    const uploadPromises = pendingFiles.map(async (fileItem) => {
       try {
         // Step 1: Get SAS URL
         const sasRes = await fetch("/api/get-sas-url", {
@@ -162,6 +171,27 @@ export function UploadArea() {
           variant: "destructive"
         })
       }
+    })
+
+    // Wait for all uploads to complete
+    const results = await Promise.allSettled(uploadPromises)
+    
+    // Count successful and failed uploads
+    const successful = results.filter(result => result.status === 'fulfilled').length
+    const failed = results.filter(result => result.status === 'rejected').length
+    
+    // Show summary toast
+    if (failed === 0) {
+      toast({
+        title: "All uploads complete",
+        description: `Successfully uploaded and analyzed ${successful} file${successful > 1 ? 's' : ''}.`
+      })
+    } else {
+      toast({
+        title: "Upload batch complete",
+        description: `${successful} file${successful > 1 ? 's' : ''} successful, ${failed} failed.`,
+        variant: failed > successful ? "destructive" : "default"
+      })
     }
   }
 
