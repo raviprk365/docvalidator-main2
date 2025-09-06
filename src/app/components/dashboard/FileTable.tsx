@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FileText, Eye, CheckCircle, XCircle, Clock, AlertCircle, ExternalLink } from 'lucide-react'
+import { FileText, Eye, CheckCircle, XCircle, Clock, AlertCircle, ExternalLink, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -20,6 +20,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { DocumentViewer } from './DocumentViewer'
+import { DocumentModal } from './DocumentModal'
 
 interface FileData {
   id: string
@@ -128,15 +129,39 @@ export function FileTable() {
   const [error, setError] = useState<string | null>(null)
   const [viewerOpen, setViewerOpen] = useState(false)
   const [selectedFile, setSelectedFile] = useState<FileData | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalDocument, setModalDocument] = useState<FileData | null>(null)
+  const [isPolling, setIsPolling] = useState(false)
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     fetchFiles()
+    startPolling()
+    
+    // Cleanup polling on unmount
+    return () => {
+      stopPolling()
+    }
   }, [])
 
-  const fetchFiles = async () => {
+  // Restart polling when processing status changes
+  useEffect(() => {
+    const hasProcessingFiles = files.some(file => file.status === 'processing' || file.status === 'pending')
+    
+    if (hasProcessingFiles && !isPolling) {
+      startPolling()
+    } else if (!hasProcessingFiles && isPolling) {
+      stopPolling()
+    }
+  }, [files, isPolling])
+
+  const fetchFiles = async (isBackgroundRefresh = false) => {
     try {
-      setLoading(true)
-      setError(null)
+      if (!isBackgroundRefresh) {
+        setLoading(true)
+        setError(null)
+      }
+      
       const response = await fetch('/api/get-files')
       
       if (!response.ok) {
@@ -144,15 +169,76 @@ export function FileTable() {
       }
       
       const data = await response.json()
-      setFiles(data.files || [])
+      const newFiles = data.files || []
+      
+      // Check if any file status has changed (for background refresh)
+      if (isBackgroundRefresh && files.length > 0) {
+        const hasStatusChanges = newFiles.some((newFile: FileData) => {
+          const oldFile = files.find(f => f.id === newFile.id)
+          return oldFile && oldFile.status !== newFile.status
+        })
+        
+        if (hasStatusChanges) {
+          console.log('File status changes detected, refreshing...')
+        }
+      }
+      
+      setFiles(newFiles)
     } catch (err) {
       console.error('Error fetching files:', err)
-      setError(err instanceof Error ? err.message : 'Unknown error')
-      // Fallback to mock data if API fails
-      setFiles(mockFiles)
+      if (!isBackgroundRefresh) {
+        setError(err instanceof Error ? err.message : 'Unknown error')
+        // Fallback to mock data if API fails
+        setFiles(mockFiles)
+      }
     } finally {
-      setLoading(false)
+      if (!isBackgroundRefresh) {
+        setLoading(false)
+      }
     }
+  }
+
+  const startPolling = () => {
+    if (refreshInterval) return // Prevent multiple intervals
+    
+    setIsPolling(true)
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch('/api/get-files')
+        if (response.ok) {
+          const data = await response.json()
+          const newFiles = data.files || []
+          
+          // Check if any processing files have completed
+          const hasStatusChanges = newFiles.some((newFile: FileData) => {
+            const currentFile = files.find(f => f.id === newFile.id)
+            return currentFile && currentFile.status !== newFile.status
+          })
+          
+          if (hasStatusChanges) {
+            console.log('Analysis status changes detected, updating files...')
+            setFiles(newFiles)
+          }
+        }
+      } catch (error) {
+        console.error('Polling error:', error)
+      }
+    }, 5000) // Poll every 5 seconds
+    
+    setRefreshInterval(interval)
+  }
+
+  const stopPolling = () => {
+    if (refreshInterval) {
+      clearInterval(refreshInterval)
+      setRefreshInterval(null)
+      setIsPolling(false)
+    }
+  }
+
+  // Manual refresh function
+  const handleManualRefresh = () => {
+    fetchFiles(false)
   }
 
   const handleViewDocument = (file: FileData) => {
@@ -175,13 +261,93 @@ export function FileTable() {
     console.log('Download file:', id)
   }
 
+  const handleOpenModal = (file: FileData) => {
+    setModalDocument(file)
+    setModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setModalOpen(false)
+    setModalDocument(null)
+  }
+
+  const getDocumentUrl = async (fileName: string): Promise<string | null> => {
+    try {
+      const response = await fetch(`/api/get-document-url?fileName=${encodeURIComponent(fileName)}`)
+      if (!response.ok) {
+        throw new Error('Failed to get document URL')
+      }
+      const data = await response.json()
+      return data.url
+    } catch (error) {
+      console.error('Error getting document URL:', error)
+      return null
+    }
+  }
+
+  const handleViewDocumentWithSAS = async (file: FileData) => {
+    // If the file already has a valid URL, use it
+    if (file.url) {
+      setSelectedFile(file)
+      setViewerOpen(true)
+      return
+    }
+
+    // Otherwise, generate a new SAS URL
+    const url = await getDocumentUrl(file.name)
+    if (url) {
+      const fileWithUrl = { ...file, url }
+      setSelectedFile(fileWithUrl)
+      setViewerOpen(true)
+    } else {
+      alert('Unable to generate document URL. Please try again later.')
+    }
+  }
+
+  const handleOpenModalWithSAS = async (file: FileData) => {
+    // If the file already has a valid URL, use it
+    if (file.url) {
+      setModalDocument(file)
+      setModalOpen(true)
+      return
+    }
+
+    // Otherwise, generate a new SAS URL
+    const url = await getDocumentUrl(file.name)
+    if (url) {
+      const fileWithUrl = { ...file, url }
+      setModalDocument(fileWithUrl)
+      setModalOpen(true)
+    } else {
+      alert('Unable to generate document URL. Please try again later.')
+    }
+  }
+
   return (
     <Card className="card-minimal">
       <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <FileText className="w-5 h-5" />
-          <span>Uploaded Documents</span>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center space-x-2">
+            <FileText className="w-5 h-5" />
+            <span>Uploaded Documents</span>
+            {isPolling && (
+              <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                <Clock className="w-3 h-3 animate-pulse" />
+                <span>Auto-refreshing...</span>
+              </div>
+            )}
+          </CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleManualRefresh}
+            disabled={loading}
+            className="flex items-center space-x-1"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -236,16 +402,33 @@ export function FileTable() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end space-x-2">
-                      {/* View Document Button */}
-                      {file.url && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleViewDocument(file)}
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
-                      )}
+                      {/* Modal View Button */}
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleOpenModalWithSAS(file)}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        View
+                      </Button>
+
+                      {/* View Document Page Button */}
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => window.open(`/dashboard/documents/${file.id}`, '_blank')}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </Button>
+                      
+                      {/* Quick Preview Button */}
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleViewDocumentWithSAS(file)}
+                      >
+                        <FileText className="w-4 h-4" />
+                      </Button>
                       
                       {/* Analysis Results Button */}
                       {file.analysisResult && (
@@ -401,6 +584,13 @@ export function FileTable() {
           fileName={selectedFile.name}
         />
       )}
+
+      {/* Document Modal */}
+      <DocumentModal
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+        document={modalDocument}
+      />
     </Card>
   )
 }

@@ -51,9 +51,13 @@ export async function GET() {
           console.log(`No detailed analysis found for ${blob.name}`);
         }
 
-        // Determine document type and status
-        const documentType = blob.metadata.documenttype || analysisData?.documentType || 'Unknown';
-        const confidence = parseFloat(blob.metadata.confidence || '0') * 100;
+        // Parse blob metadata into structured key-value pairs
+        const keyValuePairs = parseMetadataToKeyValuePairs(blob.metadata);
+        
+        // Get document type from key-value pairs first, then fallback to metadata
+        const docTypeFromKV = keyValuePairs.find(kv => kv.key.toLowerCase() === 'doctype')?.value;
+        const documentType = docTypeFromKV || blob.metadata.documenttype || blob.metadata.doctype || analysisData?.documentType || 'Unknown';
+        const confidence = parseFloat(blob.metadata.confidence || '1') * 100;
         
         // Mock approval status based on confidence and document type
         let approvalStatus: 'Approved' | 'Rejected' | 'Pending' | 'N/A' = 'N/A';
@@ -90,7 +94,11 @@ export async function GET() {
           approvalStatus: approvalStatus,
           action: '...',
           details: {
-            extractedFields: analysisData?.extractedData?.keyValuePairs?.slice(0, 3).map((pair: { key: string; value: string; confidence: number }) => ({
+            extractedFields: keyValuePairs.length > 0 ? keyValuePairs.slice(0, 5).map((pair) => ({
+              field: pair.key,
+              value: pair.value,
+              confidence: Math.round(pair.confidence * 100)
+            })) : analysisData?.extractedData?.keyValuePairs?.slice(0, 3).map((pair: { key: string; value: string; confidence: number }) => ({
               field: pair.key,
               value: pair.value,
               confidence: Math.round(pair.confidence * 100)
@@ -142,6 +150,53 @@ export async function GET() {
 }
 
 // Helper functions
+function parseMetadataToKeyValuePairs(metadata: Record<string, string>) {
+  const kvPairs: Array<{ key: string; value: string; confidence: number }> = []
+  
+  // Group metadata by key-value pairs (kv0key/kv0value/kv0confidence pattern)
+  const kvGroups: Record<string, { key?: string; value?: string; confidence?: string }> = {}
+  
+  Object.entries(metadata).forEach(([key, value]) => {
+    const kvMatch = key.match(/^kv(\d+)(key|value|confidence)$/)
+    if (kvMatch) {
+      const [, index, type] = kvMatch
+      if (!kvGroups[index]) kvGroups[index] = {}
+      kvGroups[index][type as keyof typeof kvGroups[string]] = value
+    }
+  })
+  
+  // Convert grouped data to key-value pairs
+  Object.values(kvGroups).forEach(group => {
+    if (group.key && group.value) {
+      let parsedValue = group.value
+      // Try to parse JSON values like dates and booleans
+      try {
+        const parsed = JSON.parse(group.value)
+        if (parsed.valueDate) {
+          parsedValue = new Date(parsed.valueDate).toLocaleDateString()
+        } else if (parsed.valueBoolean !== undefined) {
+          parsedValue = parsed.valueBoolean ? 'Yes' : 'No'
+        } else if (parsed.valueString) {
+          parsedValue = parsed.valueString
+        }
+      } catch {
+        // Keep original value if not JSON
+      }
+      
+      // Only add if the value is meaningful (not empty, not just type info)
+      if (parsedValue && parsedValue.trim() && !parsedValue.includes('{"type":')) {
+        kvPairs.push({
+          key: group.key,
+          value: parsedValue,
+          confidence: parseFloat(group.confidence || '1') || 1
+        })
+      }
+    }
+  })
+  
+  return kvPairs
+}
+
 async function streamToString(readableStream: any): Promise<string> {
   const reader = readableStream.getReader();
   const chunks: Uint8Array[] = [];

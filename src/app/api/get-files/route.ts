@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { BlobServiceClient, StorageSharedKeyCredential } from '@azure/storage-blob';
+import { BlobServiceClient, StorageSharedKeyCredential, generateBlobSASQueryParameters, BlobSASPermissions } from '@azure/storage-blob';
 
 export async function GET() {
   try {
@@ -54,6 +54,26 @@ export async function GET() {
         }
       }
 
+      // Generate SAS URL for read-only access
+      let fileUrl = null;
+      try {
+        const sasToken = generateBlobSASQueryParameters(
+          {
+            containerName,
+            blobName: blob.name,
+            permissions: BlobSASPermissions.parse("r"), // read-only
+            startsOn: new Date(new Date().valueOf() - 5 * 60 * 1000), // Start 5 minutes ago
+            expiresOn: new Date(new Date().valueOf() + 4 * 60 * 60 * 1000), // 4 hours expiry
+            version: "2020-08-04",
+          },
+          credential
+        ).toString();
+
+        fileUrl = `https://${accountName}.blob.core.windows.net/${containerName}/${encodeURIComponent(blob.name)}?${sasToken}`;
+      } catch (sasError) {
+        console.error(`Error generating SAS URL for ${blob.name}:`, sasError);
+      }
+
       files.push({
         id: blob.name,
         name: blob.name,
@@ -62,7 +82,7 @@ export async function GET() {
         uploadDate: blob.properties.lastModified?.toISOString() || new Date().toISOString(),
         analysisResult,
         metadata: blob.metadata,
-        url: `https://${accountName}.blob.core.windows.net/${containerName}/${blob.name}`,
+        url: fileUrl,
       });
     }
 
