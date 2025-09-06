@@ -37,18 +37,18 @@ const Index = () => {
   const features = [
     {
       icon: Shield,
-      title: 'Secure Authentication',
-      description: 'Enterprise-grade security with encrypted data storage and secure sessions.'
+      title: 'Azure-Native Security',
+      description: 'Enterprise-grade security with Azure\'s trusted infrastructure and encrypted data storage.'
     },
     {
       icon: Zap,
-      title: 'AI-Powered Validation',
-      description: 'Advanced document analysis using Azure AI Content Understanding technology.'
+      title: 'AI Auto-Classification',
+      description: 'Automatically classify documents and extract fields with high accuracy using Azure AI.'
     },
     {
       icon: CheckCircle,
-      title: 'Real-time Processing',
-      description: 'Instant feedback on document validation with detailed analysis results.'
+      title: 'Business Rules Validation',
+      description: 'Validate against custom business rules (dates, signatures, GST) with intuitive exception review.'
     }
   ]
 
@@ -62,8 +62,8 @@ const Index = () => {
               <FileText className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold">DocValidator</h1>
-              <p className="text-sm text-muted-foreground">Sydney Document Validation</p>
+              <h1 className="text-lg font-semibold">EAI Document Intelligence</h1>
+              <p className="text-sm text-muted-foreground">Azure-Native Platform</p>
             </div>
           </div>
           <Button onClick={() => router.push('/auth')} className="btn-primary">
@@ -76,11 +76,10 @@ const Index = () => {
       <main className="container mx-auto px-4 py-16">
         <div className="text-center mb-16 animate-fade-in">
           <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-            Sydney Document Validation Platform
+EAI Document Intelligence
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-            Upload, validate, and analyze your documents with AI-powered technology. 
-            Built with Sydney precision for enterprise security and reliability.
+            EAI Document Intelligence is a secure, Azure-native platform that transforms unstructured content into trusted, actionable data. It auto-classifies documents, extracts fields with high accuracy, validates against your business rules (e.g., dates, signatures, GST), and highlights exceptions with an intuitive, bounding-box viewer for rapid human review.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
@@ -88,7 +87,7 @@ const Index = () => {
               onClick={() => router.push('/auth')}
               className="btn-primary text-lg px-8 py-3"
             >
-              Start Validating
+              Get Started
             </Button>
             <Button 
               variant="outline" 
@@ -127,7 +126,7 @@ const Index = () => {
             <CardContent className="p-8">
               <h2 className="text-2xl font-semibold mb-4">Ready to get started?</h2>
               <p className="text-muted-foreground mb-6">
-                Join thousands of organizations using DocValidator for secure document processing.
+                Join thousands of organizations using EAI Document Intelligence for secure document processing.
               </p>
               <Button 
                 size="lg" 
@@ -148,10 +147,10 @@ const Index = () => {
             <div className="w-6 h-6 bg-primary rounded-lg flex items-center justify-center">
               <FileText className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold">DocValidator</span>
+            <span className="font-semibold">EAI Document Intelligence</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            Document validation with enterprise-grade security. Built with React, TypeScript, and Supabase.
+            Secure, Azure-native document intelligence platform. Built with React, TypeScript, and Azure AI.
           </p>
         </div>
       </footer>

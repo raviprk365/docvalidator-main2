@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation'
 import { User, LogOut, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '../ui/use-toast'
+import { PageNavigation } from './PageNavigation'
 
 type DummyUser = {
   id: string
@@ -29,7 +30,7 @@ export function Header() {
     
     toast({
       title: "Signed out successfully",
-      description: "You have been logged out of DocValidator."
+      description: "You have been logged out of EAI Document Intelligence."
     })
     
     router.push('/')
@@ -38,14 +39,18 @@ export function Header() {
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <FileText className="w-5 h-5 text-primary-foreground" />
+        <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <FileText className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold">EAI Document Intelligence</h1>
+              <p className="text-sm text-muted-foreground">Azure-Native Platform</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-semibold">DocValidator</h1>
-            <p className="text-sm text-muted-foreground">Sydney Document Validation</p>
-          </div>
+
+          {user && <PageNavigation />}
         </div>
 
         {user && (

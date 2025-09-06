@@ -41,7 +41,7 @@ export function DocumentViewer({ isOpen, onClose, fileUrl, fileName }: DocumentV
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-[95vw] max-h-[95vh] w-[95vw] flex flex-col">
         <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <DialogTitle className="text-lg font-semibold truncate mr-4">
             {fileName}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { FileText, ChevronDown, ChevronRight, AlertCircle, CheckCircle, XCircle, Clock, Info } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Badge } from '@/app/components/ui/badge'
@@ -12,11 +12,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/app/components/ui/table'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/app/components/ui/collapsible'
 
 interface DocumentAnalysis {
   id: string
@@ -344,7 +339,7 @@ export function DocumentAnalysisView() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-8"></TableHead>
-                <TableHead>Document type</TableHead>
+                <TableHead>Document name</TableHead>
                 <TableHead>Document type match</TableHead>
                 <TableHead>Criteria</TableHead>
                 <TableHead>Approval status</TableHead>
@@ -353,12 +348,11 @@ export function DocumentAnalysisView() {
             </TableHeader>
             <TableBody>
               {analysisResults.map((item) => (
-                <Collapsible key={item.id} open={item.isExpanded}>
-                  <CollapsibleTrigger asChild>
-                    <TableRow 
-                      className="cursor-pointer hover:bg-gray-50"
-                      onClick={() => toggleExpand(item.id)}
-                    >
+                <React.Fragment key={item.id}>
+                  <TableRow 
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => toggleExpand(item.id)}
+                  >
                       <TableCell>
                         {item.isExpanded ? (
                           <ChevronDown className="w-4 h-4" />
@@ -369,7 +363,10 @@ export function DocumentAnalysisView() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <FileText className="w-4 h-4 text-gray-400" />
-                          <span className="font-medium">{item.name}</span>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{item.name}</span>
+                            <span className="text-xs text-gray-500">{item.type}</span>
+                          </div>
                           <Info className="w-3 h-3 text-gray-400" />
                         </div>
                       </TableCell>
@@ -388,9 +385,8 @@ export function DocumentAnalysisView() {
                         </Button>
                       </TableCell>
                     </TableRow>
-                  </CollapsibleTrigger>
                   
-                  <CollapsibleContent asChild>
+                  {item.isExpanded && (
                     <TableRow>
                       <TableCell colSpan={6} className="bg-gray-50 p-4">
                         <div className="space-y-4">
@@ -452,8 +448,8 @@ export function DocumentAnalysisView() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  </CollapsibleContent>
-                </Collapsible>
+                  )}
+                </React.Fragment>
               ))}
             </TableBody>
           </Table>

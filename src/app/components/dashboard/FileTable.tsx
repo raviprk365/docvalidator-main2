@@ -438,7 +438,7 @@ export function FileTable() {
                               <Eye className="w-4 h-4" />
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
+                          <DialogContent className="max-w-[95vw] w-[95vw]">
                             <DialogHeader>
                               <DialogTitle>Analysis Results</DialogTitle>
                               <DialogDescription>

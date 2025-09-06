@@ -33,8 +33,8 @@ export function AuthForm() {
       toast({
         title: type === 'signup' ? "Account created" : "Signed in successfully",
         description: type === 'signup' 
-          ? "Welcome to DocValidator!" 
-          : "Welcome back to DocValidator."
+          ? "Welcome to EAI Document Intelligence!" 
+          : "Welcome back to EAI Document Intelligence."
       })
       
       setIsLoading(false)
@@ -50,8 +50,8 @@ export function AuthForm() {
           <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
             <FileText className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-semibold">DocValidator</h1>
-          <p className="text-muted-foreground">Sydney Document Validation Platform</p>
+          <h1 className="text-2xl font-semibold">EAI Document Intelligence</h1>
+          <p className="text-muted-foreground">Azure-Native Platform</p>
         </div>
 
         <Card className="card-elevated">

@@ -59,29 +59,54 @@ export async function GET() {
         const documentType = docTypeFromKV || blob.metadata.documenttype || blob.metadata.doctype || analysisData?.documentType || 'Unknown';
         const confidence = parseFloat(blob.metadata.confidence || '1') * 100;
         
-        // Mock approval status based on confidence and document type
-        let approvalStatus: 'Approved' | 'Rejected' | 'Pending' | 'N/A' = 'N/A';
-        let criteria = 'N/A';
+        // Calculate approval status based on document completeness and validity
+        let approvalStatus: 'Approved' | 'Rejected' | 'Pending' | 'N/A' = 'Pending';
+        let criteria = '0/9';
+        let criteriaCount = 0;
 
-        if (confidence > 90) {
+        // Check various criteria from the extracted data
+        const requiredFields = ['DocType', 'CertificateNumber', 'DateOfIssue', 'LocalGovernmentArea'];
+        let hasRequiredFields = 0;
+        
+        // Count how many required fields are present
+        requiredFields.forEach(field => {
+          if (keyValuePairs.some(kv => kv.key === field && kv.value && kv.value.trim() && kv.value !== 'N/A')) {
+            hasRequiredFields++;
+          }
+        });
+
+        criteriaCount += hasRequiredFields * 2; // 2 points per required field (max 8)
+
+        // Check document validity
+        const validityField = keyValuePairs.find(kv => kv.key.toLowerCase().includes('validity'));
+        const isValid = !validityField || validityField.value.toLowerCase() !== 'no';
+        if (isValid) {
+          criteriaCount += 1; // 1 point for validity
+        }
+
+        // Determine approval status
+        criteria = `${criteriaCount}/9`;
+        
+        if (criteriaCount >= 8 && isValid) {
           approvalStatus = 'Approved';
           approvedFiles++;
-          criteria = '9/9';
-        } else if (confidence > 70) {
-          approvalStatus = Math.random() > 0.5 ? 'Approved' : 'Rejected';
-          if (approvalStatus === 'Approved') {
-            approvedFiles++;
-            criteria = '8/9';
-          } else {
-            rejectedFiles++;
-            criteria = '7/9';
-            majorErrors++;
-          }
-        } else if (confidence > 0) {
+        } else if (criteriaCount >= 6) {
+          approvalStatus = 'Pending';
+        } else {
           approvalStatus = 'Rejected';
           rejectedFiles++;
-          criteria = '5/9';
           majorErrors++;
+        }
+
+        // Calculate document type match percentage based on data completeness and validity
+        let matchPercentage = 0;
+        if (documentType && documentType !== 'Unknown') {
+          matchPercentage = Math.max(60, Math.round((criteriaCount / 9) * 100)); // Base 60% if type is identified
+          
+          // Boost percentage if document has good validity
+          if (isValid && hasRequiredFields >= 3) {
+            matchPercentage = Math.min(100, matchPercentage + 20);
+          }
         }
 
         // Create analysis result
@@ -89,7 +114,7 @@ export async function GET() {
           id: blob.name.replace(/[^a-zA-Z0-9]/g, ''),
           name: getDocumentDisplayName(blob.name, documentType),
           type: documentType,
-          matchPercentage: Math.round(confidence),
+          matchPercentage: matchPercentage,
           criteria: criteria,
           approvalStatus: approvalStatus,
           action: '...',
@@ -103,8 +128,8 @@ export async function GET() {
               value: pair.value,
               confidence: Math.round(pair.confidence * 100)
             })) || [],
-            issues: confidence < 70 ? ['Low confidence detection', 'Manual review required'] : undefined,
-            recommendations: confidence < 50 ? ['Re-upload with better quality', 'Ensure document is clear'] : undefined
+            issues: generateIssues(keyValuePairs, isValid, hasRequiredFields),
+            recommendations: generateRecommendations(approvalStatus, keyValuePairs, isValid)
           }
         };
 
@@ -195,6 +220,52 @@ function parseMetadataToKeyValuePairs(metadata: Record<string, string>) {
   })
   
   return kvPairs
+}
+
+function generateIssues(keyValuePairs: Array<{ key: string; value: string; confidence: number }>, isValid: boolean, hasRequiredFields: number): string[] | undefined {
+  const issues: string[] = [];
+  
+  // Check for validity issues
+  if (!isValid) {
+    issues.push('Document marked as invalid or expired');
+  }
+  
+  // Check for missing required fields
+  const requiredFields = ['CertificateNumber', 'DateOfIssue', 'LocalGovernmentArea'];
+  const missingFields = requiredFields.filter(field => 
+    !keyValuePairs.some(kv => kv.key === field && kv.value && kv.value.trim() && kv.value !== 'N/A')
+  );
+  
+  if (missingFields.length > 0) {
+    issues.push(`Missing required fields: ${missingFields.join(', ')}`);
+  }
+  
+  // Check for low confidence values
+  const lowConfidenceFields = keyValuePairs.filter(kv => kv.confidence < 0.8);
+  if (lowConfidenceFields.length > 0) {
+    issues.push(`Low confidence detection in: ${lowConfidenceFields.map(f => f.key).join(', ')}`);
+  }
+  
+  return issues.length > 0 ? issues : undefined;
+}
+
+function generateRecommendations(approvalStatus: string, keyValuePairs: Array<{ key: string; value: string; confidence: number }>, isValid: boolean): string[] | undefined {
+  const recommendations: string[] = [];
+  
+  if (approvalStatus === 'Rejected') {
+    if (!isValid) {
+      recommendations.push('Upload a current, valid version of the document');
+    }
+    recommendations.push('Ensure all required fields are clearly visible');
+    recommendations.push('Re-upload with better image quality if needed');
+  } else if (approvalStatus === 'Pending') {
+    recommendations.push('Manual review recommended');
+    if (keyValuePairs.some(kv => kv.confidence < 0.9)) {
+      recommendations.push('Verify extracted information accuracy');
+    }
+  }
+  
+  return recommendations.length > 0 ? recommendations : undefined;
 }
 
 async function streamToString(readableStream: any): Promise<string> {

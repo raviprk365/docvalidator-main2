@@ -220,7 +220,7 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[800px] max-h-[99vh] w-[800px] flex flex-col p-0">
+      <DialogContent className="max-w-[95vw] max-h-[95vh] w-[95vw] flex flex-col p-0">
         {/* Header */}
         <DialogHeader className="flex flex-row items-center justify-between p-6 pb-4 space-y-0">
           <div className="flex items-center space-x-4">
