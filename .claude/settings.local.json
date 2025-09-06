@@ -10,7 +10,10 @@
       "Bash(npm run dev:*)",
       "Bash(start-3002.bat)",
       "Bash(npx tsc:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(npx eslint:*)",
+      "Bash(mkdir:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [],
     "ask": []

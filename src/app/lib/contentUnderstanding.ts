@@ -39,7 +39,7 @@ export interface ContentUnderstandingResponse {
   lastUpdatedDateTime: string;
   status: string;
   result?: {
-    documents?: Array<{
+    contents?: Array<{
       docType: string;
       confidence: number;
       fields: Record<string, any>;
@@ -67,182 +67,215 @@ export interface ContentUnderstandingResponse {
   };
 }
 
-export class ContentUnderstandingService {
+interface ContentUnderstandingSettings {
+  endpoint: string;
+  apiVersion: string;
+  subscriptionKey?: string;
+  aadToken?: string;
+  analyzerId: string;
+  userAgent?: string;
+}
+
+interface TokenProvider {
+  (): string;
+}
+
+export class AzureContentUnderstandingClient {
   private endpoint: string;
-  private apiKey: string;
-  private analyzerId: string;
   private apiVersion: string;
+  private subscriptionKey?: string;
+  private tokenProvider?: TokenProvider;
+  private userAgent: string;
+  private headers: Record<string, string>;
 
-  constructor() {
-    this.endpoint = process.env.FOUNDRY_ENDPOINT!;
-    this.apiKey = process.env.FOUNDRY_KEY!;
-    this.analyzerId = process.env.FOUNDRY_ANALYZER_ID!;
-    this.apiVersion = process.env.FOUNDRY_API_VERSION!;
-
-    if (!this.endpoint || !this.apiKey || !this.analyzerId || !this.apiVersion) {
-      throw new Error('Missing required Content Understanding configuration');
+  constructor(settings: ContentUnderstandingSettings) {
+    // Validate required parameters
+    if (!settings.endpoint) {
+      throw new Error('Endpoint must be provided');
     }
+    if (!settings.apiVersion) {
+      throw new Error('API version must be provided');
+    }
+    if (!settings.subscriptionKey && !settings.aadToken) {
+      throw new Error('Either subscription_key or aad_token must be provided');
+    }
+
+    this.endpoint = settings.endpoint.replace(/\/$/, ''); // Remove trailing slash
+    this.apiVersion = settings.apiVersion;
+    this.subscriptionKey = settings.subscriptionKey;
+    this.userAgent = settings.userAgent || 'cu-sample-code-ts';
+    
+    // Set up token provider if AAD token is provided
+    if (settings.aadToken) {
+      this.tokenProvider = () => settings.aadToken!;
+    }
+
+    this.headers = this.getHeaders();
   }
 
-  private get analyzeUrl() {
-    return `${this.endpoint}/contentunderstanding/analyzers/${this.analyzerId}:analyze?api-version=${this.apiVersion}`;
+  private getAnalyzeUrl(analyzerId: string): string {
+    return `${this.endpoint}/contentunderstanding/analyzers/${analyzerId}:analyze?api-version=${this.apiVersion}&stringEncoding=utf16`;
   }
 
-  private get headers() {
-    return {
-      'Content-Type': 'application/json',
-      'Ocp-Apim-Subscription-Key': this.apiKey,
+  private getHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      'x-ms-useragent': this.userAgent,
     };
+
+    if (this.subscriptionKey) {
+      headers['Ocp-Apim-Subscription-Key'] = this.subscriptionKey;
+    } else if (this.tokenProvider) {
+      headers['Authorization'] = `Bearer ${this.tokenProvider()}`;
+    }
+
+    return headers;
   }
 
   /**
-   * Start document analysis
+   * Begins the analysis of a file or URL using the specified analyzer.
+   * 
+   * @param analyzerId - The ID of the analyzer to use
+   * @param fileLocation - The path to the file or the URL to analyze
+   * @returns Response object with operation location
    */
-  async analyzeDocument(fileUrl: string): Promise<{ operationId: string; operationLocation: string }> {
-    try {
-      console.log('Starting document analysis for URL:', fileUrl);
-      console.log('Using analyze URL:', this.analyzeUrl);
-      
-      const response = await fetch(this.analyzeUrl, {
-        method: 'POST',
-        headers: this.headers,
-        body: JSON.stringify({ url: fileUrl }),
-      });
+  async beginAnalyze(analyzerId: string, fileLocation: string): Promise<Response> {
+    let data: Record<string, unknown> | ArrayBuffer;
+    let headers: Record<string, string>;
 
-      console.log('Analysis response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Analysis API error response:', errorText);
-        throw new Error(`Content Understanding API error: ${response.status} - ${errorText}`);
-      }
-
-      // Get operation ID from response headers
-      const operationLocation = response.headers.get('Operation-Location');
-      console.log('Operation-Location header:', operationLocation);
-      
-      if (!operationLocation) {
-        throw new Error('No Operation-Location header in response');
-      }
-
-      // Extract operation ID from the operation location URL
-      const operationId = operationLocation.split('/').pop()?.split('?')[0];
-      if (!operationId) {
-        throw new Error('Could not extract operation ID from Operation-Location header');
-      }
-
-      console.log('Analysis started successfully, operation ID:', operationId);
-
-      return {
-        operationId,
-        operationLocation,
+    // Check if it's a URL or file path
+    if (fileLocation.startsWith('http://') || fileLocation.startsWith('https://')) {
+      data = { url: fileLocation };
+      headers = {
+        'Content-Type': 'application/json',
+        ...this.headers,
       };
-    } catch (error) {
-      console.error('Error starting document analysis:', error);
-      throw error;
+    } else {
+      // For file paths, we'd need to read the file as binary
+      // In browser/Node.js context, this would typically be handled differently
+      throw new Error('File path analysis not supported in this implementation. Use URL-based analysis.');
     }
+
+    const analyzeUrl = this.getAnalyzeUrl(analyzerId);
+    console.log(`Analyzing file ${fileLocation} with analyzer: ${analyzerId}`);
+
+    const response = await fetch(analyzeUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    return response;
   }
 
   /**
-   * Get analysis results
+   * Get analysis results from operation location
    */
-  async getAnalysisResult(operationLocation: string): Promise<ContentUnderstandingResponse> {
-    try {
-      const response = await fetch(operationLocation, {
-        method: 'GET',
-        headers: {
-          'Ocp-Apim-Subscription-Key': this.apiKey,
-        },
-      });
+  private async getAnalysisResult(operationLocation: string): Promise<Record<string, unknown>> {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...this.headers,
+    };
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Content Understanding API error: ${response.status} - ${errorText}`);
-      }
+    const response = await fetch(operationLocation, {
+      method: 'GET',
+      headers,
+    });
 
-      return await response.json();
-    } catch (error) {
-      console.error('Error getting analysis result:', error);
-      throw error;
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
+
+    return await response.json();
   }
 
   /**
-   * Poll for analysis completion
+   * Polls the result of an asynchronous operation until it completes or times out.
+   * 
+   * @param response - The initial response object containing the operation location
+   * @param timeoutSeconds - The maximum number of seconds to wait for completion (default: 120)
+   * @param pollingIntervalSeconds - The number of seconds to wait between polling attempts (default: 2)
+   * @returns The JSON response of the completed operation
    */
-  async pollForCompletion(
-    operationLocation: string,
-    maxAttempts: number = 60, // Increased from 30 to 60 (2 minutes total)
-    intervalMs: number = 2000
-  ): Promise<ContentUnderstandingResponse> {
-    let attempts = 0;
-    console.log(`Starting polling for completion. Max attempts: ${maxAttempts}, interval: ${intervalMs}ms`);
+  async pollResult(
+    response: Response,
+    timeoutSeconds: number = 120,
+    pollingIntervalSeconds: number = 2
+  ): Promise<Record<string, unknown>> {
+    const operationLocation = response.headers.get('operation-location') || response.headers.get('Operation-Location');
+    
+    if (!operationLocation) {
+      throw new Error('Operation location not found in response headers.');
+    }
 
-    while (attempts < maxAttempts) {
-      attempts++;
+    const startTime = Date.now();
+    const timeoutMs = timeoutSeconds * 1000;
+    const intervalMs = pollingIntervalSeconds * 1000;
+
+    while (true) {
+      const elapsed = Date.now() - startTime;
+      console.log(`Waiting for service response (elapsed: ${(elapsed / 1000).toFixed(2)}s)`);
       
-      try {
-        const result = await this.getAnalysisResult(operationLocation);
-        console.log(`Polling attempt ${attempts}/${maxAttempts}, status: ${result.status}`);
-
-        if (result.status === 'Succeeded' || result.status === 'succeeded') {
-          console.log('Analysis completed successfully');
-          return result;
-        }
-        
-        if (result.status === 'Failed' || result.status === 'failed') {
-          console.log('Analysis failed:', result.error);
-          return result;
-        }
-
-        // Status is still running/processing - wait before next attempt
-        if (attempts < maxAttempts) {
-          console.log(`Status: ${result.status}, waiting ${intervalMs}ms before next attempt...`);
-          await new Promise(resolve => setTimeout(resolve, intervalMs));
-        }
-      } catch (error) {
-        console.error(`Error during polling attempt ${attempts}:`, error);
-        if (attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, intervalMs));
-        }
+      if (elapsed > timeoutMs) {
+        throw new Error(`Operation timed out after ${(elapsed / 1000).toFixed(2)} seconds.`);
       }
-    }
 
-    console.error(`Analysis polling timeout after ${maxAttempts} attempts (${(maxAttempts * intervalMs) / 1000}s total)`);
-    throw new Error(`Analysis polling timeout after ${maxAttempts} attempts`);
+      const result = await this.getAnalysisResult(operationLocation);
+      const status = ((result.status as string) || '').toLowerCase();
+      
+      if (status === 'succeeded') {
+        console.log(`Request result is ready after ${(elapsed / 1000).toFixed(2)} seconds.`);
+        return result;
+      } else if (status === 'failed') {
+        console.error('Request failed. Reason:', result);
+        throw new Error('Request failed.');
+      } else {
+        const operationId = operationLocation.split('/').pop()?.split('?')[0] || 'unknown';
+        console.log(`Request ${operationId} in progress ...`);
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, intervalMs));
+    }
   }
 
   /**
    * Transform Content Understanding response to our internal format
    */
-  transformToDocumentAnalysisResult(
+  private transformToDocumentAnalysisResult(
     operationId: string,
-    response: ContentUnderstandingResponse
+    response: Record<string, unknown>
   ): DocumentAnalysisResult {
-    if (response.status === 'Failed' || response.status === 'failed') {
+    const contentResponse = response as unknown as ContentUnderstandingResponse;
+    
+    if (contentResponse.status === 'Failed' || contentResponse.status === 'failed') {
       return {
         id: operationId,
         status: 'failed',
-        error: response.error?.message || 'Analysis failed',
-        processedAt: response.lastUpdatedDateTime,
+        error: contentResponse.error?.message || 'Analysis failed',
+        processedAt: contentResponse.lastUpdatedDateTime,
       };
     }
 
-    if ((response.status !== 'Succeeded' && response.status !== 'succeeded') || !response.result) {
+    if ((contentResponse.status !== 'Succeeded' && contentResponse.status !== 'succeeded') || !contentResponse.result) {
       return {
         id: operationId,
         status: 'processing',
       };
     }
 
-    const result = response.result;
-    const document = result.documents?.[0];
+    const result = contentResponse.result;
+    const document = result.contents?.[0];
 
     // Extract key-value pairs from document fields
     const keyValuePairs = document?.fields
-      ? Object.entries(document.fields).map(([key, value]: [string, { content?: string; confidence?: number } | string]) => ({
+      ? Object.entries(document.fields).map(([key, value]: [string, any]) => ({
           key,
-          value: typeof value === 'object' ? value.content || JSON.stringify(value) : String(value),
+          value: typeof value === 'object' ? (value.valueString || value.content || JSON.stringify(value)) : String(value),
           confidence: typeof value === 'object' ? value.confidence || 0 : 1,
         }))
       : [];
@@ -258,10 +291,14 @@ export class ContentUnderstandingService {
       })),
     })) || [];
 
+    // Get documentType from DocType key in keyValuePairs, fallback to document.docType or 'unknown'
+    const docTypeFromKVP = keyValuePairs.find(kvp => kvp.key.toLowerCase() === 'doctype')?.value;
+    const documentType = docTypeFromKVP || document?.docType || 'unknown';
+
     return {
       id: operationId,
       status: 'completed',
-      documentType: document?.docType || 'unknown',
+      documentType,
       confidence: document?.confidence || 0,
       extractedData: {
         text: result.content || '',
@@ -269,28 +306,65 @@ export class ContentUnderstandingService {
         tables,
         entities: [], // Content Understanding doesn't provide entities in the same format
       },
-      processedAt: response.lastUpdatedDateTime,
+      processedAt: contentResponse.lastUpdatedDateTime,
     };
+  }
+}
+
+/**
+ * Convenience wrapper class that maintains the original interface
+ * but uses the new AzureContentUnderstandingClient internally
+ */
+export class ContentUnderstandingService {
+  private client: AzureContentUnderstandingClient;
+  private analyzerId: string;
+
+  constructor() {
+    const endpoint = process.env.FOUNDRY_ENDPOINT;
+    const subscriptionKey = process.env.FOUNDRY_KEY;
+    const analyzerId = process.env.FOUNDRY_ANALYZER_ID;
+    const apiVersion = process.env.FOUNDRY_API_VERSION;
+
+    if (!endpoint || !subscriptionKey || !analyzerId || !apiVersion) {
+      throw new Error('Missing required Content Understanding configuration');
+    }
+
+    this.analyzerId = analyzerId;
+    this.client = new AzureContentUnderstandingClient({
+      endpoint,
+      apiVersion,
+      subscriptionKey,
+      analyzerId,
+      userAgent: 'docvalidator-service',
+    });
   }
 
   /**
-   * Complete analysis workflow
+   * Complete analysis workflow - maintains original interface
    */
   async analyzeDocumentComplete(fileUrl: string): Promise<DocumentAnalysisResult> {
     try {
       console.log('Starting complete document analysis workflow for:', fileUrl);
       
-      // Start analysis
-      const { operationId, operationLocation } = await this.analyzeDocument(fileUrl);
+      // Start analysis using new client
+      const response = await this.client.beginAnalyze(this.analyzerId, fileUrl);
+      
+      // Get operation location and extract operation ID
+      const operationLocation = response.headers.get('operation-location') || response.headers.get('Operation-Location');
+      if (!operationLocation) {
+        throw new Error('No operation location in response headers');
+      }
+      
+      const operationId = operationLocation.split('/').pop()?.split('?')[0] || 'unknown';
 
       // Poll for completion with extended timeout for large documents
-      const response = await this.pollForCompletion(operationLocation, 90, 3000); // 4.5 minutes total
+      const result = await this.client.pollResult(response, 270, 3); // 4.5 minutes total, 3 second intervals
 
       // Transform and return result
-      const result = this.transformToDocumentAnalysisResult(operationId, response);
-      console.log('Complete document analysis finished:', result.status);
-      console.log('Analysis result:', JSON.stringify(result, null, 2));
-      return result;
+      const analysisResult = this.client['transformToDocumentAnalysisResult'](operationId, result);
+      console.log('Complete document analysis finished:', analysisResult.status);
+      console.log('Analysis result:', JSON.stringify(analysisResult, null, 2));
+      return analysisResult;
     } catch (error) {
       console.error('Complete document analysis failed:', error);
       
@@ -302,5 +376,73 @@ export class ContentUnderstandingService {
         processedAt: new Date().toISOString(),
       };
     }
+  }
+
+  /**
+   * Legacy method - start document analysis
+   */
+  async analyzeDocument(fileUrl: string): Promise<{ operationId: string; operationLocation: string }> {
+    try {
+      const response = await this.client.beginAnalyze(this.analyzerId, fileUrl);
+      const operationLocation = response.headers.get('operation-location') || response.headers.get('Operation-Location');
+      
+      if (!operationLocation) {
+        throw new Error('No Operation-Location header in response');
+      }
+
+      const operationId = operationLocation.split('/').pop()?.split('?')[0];
+      if (!operationId) {
+        throw new Error('Could not extract operation ID from Operation-Location header');
+      }
+
+      return {
+        operationId,
+        operationLocation,
+      };
+    } catch (error) {
+      console.error('Error starting document analysis:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Legacy method - get analysis results
+   */
+  async getAnalysisResult(operationLocation: string): Promise<ContentUnderstandingResponse> {
+    const result = await this.client['getAnalysisResult'](operationLocation);
+    return result as unknown as ContentUnderstandingResponse;
+  }
+
+  /**
+   * Legacy method - poll for completion
+   */
+  async pollForCompletion(
+    operationLocation: string,
+    maxAttempts: number = 60,
+    intervalMs: number = 2000
+  ): Promise<ContentUnderstandingResponse> {
+    // Convert to timeout seconds and polling interval seconds
+    const timeoutSeconds = (maxAttempts * intervalMs) / 1000;
+    const pollingIntervalSeconds = intervalMs / 1000;
+    
+    // Create a fake response object with the operation location
+    const fakeResponse = {
+      headers: {
+        get: (name: string) => name.toLowerCase() === 'operation-location' ? operationLocation : null
+      }
+    } as Response;
+
+    const result = await this.client.pollResult(fakeResponse, timeoutSeconds, pollingIntervalSeconds);
+    return result as unknown as ContentUnderstandingResponse;
+  }
+
+  /**
+   * Legacy method - transform response
+   */
+  transformToDocumentAnalysisResult(
+    operationId: string,
+    response: ContentUnderstandingResponse
+  ): DocumentAnalysisResult {
+    return this.client['transformToDocumentAnalysisResult'](operationId, response as unknown as Record<string, unknown>);
   }
 }
