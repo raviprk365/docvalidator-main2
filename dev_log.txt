@@ -1,0 +1,13 @@
+
+> docvalidatorproject@0.1.0 dev
+> next dev --turbopack
+
+ ⚠ Port 3000 is in use by process 13200, using available port 3002 instead.
+   ▲ Next.js 15.5.2 (Turbopack)
+   - Local:        http://localhost:3002
+   - Network:      http://192.168.1.200:3002
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1765ms
+[?25h
