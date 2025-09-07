@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { FileText, Shield, Zap, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CheckCircle, FileText, Shield, Zap } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 const Index = () => {
@@ -62,7 +62,7 @@ const Index = () => {
             </div>
             <div>
               <h1 className="text-lg font-semibold">DocValidator</h1>
-              <p className="text-sm text-muted-foreground">Sydney Document Validation</p>
+              <p className="text-sm text-muted-foreground">EAI Document Validation</p>
             </div>
           </div>
           <Button onClick={() => router.push('/auth')} className="btn-primary">
@@ -75,11 +75,11 @@ const Index = () => {
       <main className="container mx-auto px-4 py-16">
         <div className="text-center mb-16 animate-fade-in">
           <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-            Sydney Document Validation Platform
+            EAI Document Validation Platform
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
             Upload, validate, and analyze your documents with AI-powered technology. 
-            Built with Sydney precision for enterprise security and reliability.
+            Built with EAI precision for enterprise security and reliability.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
@@ -150,7 +150,7 @@ const Index = () => {
             <span className="font-semibold">DocValidator</span>
           </div>
           <p className="text-sm text-muted-foreground">
-          Sydney document validation with enterprise-grade security. Built with React, TypeScript, and Supabase.
+          EAI document validation with enterprise-grade security. Built with React, TypeScript, and Supabase.
           </p>
         </div>
       </footer>

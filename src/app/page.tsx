@@ -1,9 +1,9 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { FileText, Shield, Zap, CheckCircle } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
+import { CheckCircle, FileText, Shield, Zap } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { supabase, type User } from './lib/supabase'
 
 const Index = () => {
@@ -79,7 +79,7 @@ const Index = () => {
 EAI Document Intelligence
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-            EAI Document Intelligence is a secure, Azure-native platform that transforms unstructured content into trusted, actionable data. It auto-classifies documents, extracts fields with high accuracy, validates against your business rules (e.g., dates, signatures, GST), and highlights exceptions with an intuitive, bounding-box viewer for rapid human review.
+            EAI Document Intelligence is a secure, Azure-native platform that transforms unstructured content into trusted, actionable data. It auto-classifies documents, extracts fields with high accuracy, validates against your business rules (e.g., dates, signatures, GST), and highlights exceptions with an intuitive viewer for rapid human review.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 

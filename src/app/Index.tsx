@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { FileText, Shield, Zap, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase, type User } from '@/lib/supabase'
+import { CheckCircle, FileText, Shield, Zap } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null)
@@ -62,7 +62,7 @@ const Index = () => {
             </div>
             <div>
               <h1 className="text-lg font-semibold">DocValidator</h1>
-              <p className="text-sm text-muted-foreground">Sydney Document Validation</p>
+              <p className="text-sm text-muted-foreground">EAI Document Validation</p>
             </div>
           </div>
           <Button onClick={() => navigate('/auth')} className="btn-primary">

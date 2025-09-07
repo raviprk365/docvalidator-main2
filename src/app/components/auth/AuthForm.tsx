@@ -1,11 +1,11 @@
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { FileText, Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, FileText, Lock, Mail } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { useToast } from '../ui/use-toast'
 
 export function AuthForm() {
@@ -170,7 +170,7 @@ export function AuthForm() {
         </Card>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
-          Secure Sydney document validation with enterprise-grade authentication
+          EAI document validation with enterprise-grade authentication
         </p>
       </div>
     </div>
