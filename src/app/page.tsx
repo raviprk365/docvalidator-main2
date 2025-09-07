@@ -14,7 +14,7 @@ const Index = () => {
     // Check if user is already authenticated
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        router.push('/dashboard')
+        router.push('/folders')
       } else {
         setUser(null)
       }
@@ -24,7 +24,7 @@ const Index = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (session?.user) {
-          router.push('/dashboard')
+          router.push('/folders')
         } else {
           setUser(null)
         }

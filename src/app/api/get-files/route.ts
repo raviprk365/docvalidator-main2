@@ -1,8 +1,19 @@
 import { NextResponse } from 'next/server';
 import { BlobServiceClient, StorageSharedKeyCredential, generateBlobSASQueryParameters, BlobSASPermissions } from '@azure/storage-blob';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const folder = searchParams.get('folder');
+    
+    // Require folder parameter - no root folder access
+    if (!folder) {
+      return NextResponse.json(
+        { error: 'Folder parameter is required' },
+        { status: 400 }
+      );
+    }
+    
     const accountName = process.env.AZURE_ACCOUNT_NAME!;
     const accountKey = process.env.AZURE_ACCOUNT_KEY!;
     const containerName = process.env.AZURE_CONTAINER_NAME!;
@@ -17,14 +28,23 @@ export async function GET() {
 
     const files = [];
     
-    // List all blobs in the container
+    // Set prefix for the specific application folder
+    const prefix = `${folder}/`;
+    
+    // List blobs with the application folder prefix
     for await (const blob of containerClient.listBlobsFlat({
       includeMetadata: true,
       includeSnapshots: false,
-      prefix: '', // Only get files, not analysis results
+      prefix: prefix,
     })) {
-      // Skip analysis result files
-      if (blob.name.endsWith('.analysis.json')) {
+      // Skip analysis result files and folder placeholder files
+      if (blob.name.endsWith('.analysis.json') || blob.name.endsWith('.folder_created')) {
+        continue;
+      }
+
+      // Only include direct children of this application folder (not nested)
+      const relativePath = blob.name.substring(prefix.length);
+      if (relativePath.includes('/')) {
         continue;
       }
 

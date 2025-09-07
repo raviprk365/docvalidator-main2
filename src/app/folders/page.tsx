@@ -1,39 +1,30 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Header } from '../components/layout/Header'
-import { Dashboard as DashboardComponent } from '../components/dashboard/Dashboard'
+import { FolderGrid } from '../components/landing/FolderGrid'
+
 type DummyUser = {
   id: string
   email: string
   created_at: string
 }
 
-const Dashboard = () => {
+const ApplicationsPage = () => {
   const [user, setUser] = useState<DummyUser | null>(null)
   const [loading, setLoading] = useState(true)
   const navigate = useRouter()
-  const searchParams = useSearchParams()
-  const folder = searchParams.get('folder')
 
   useEffect(() => {
     // Check for dummy user
     const dummyUserData = localStorage.getItem('dummy-user')
     if (!dummyUserData) {
       navigate.push('/auth')
-      return
     } else {
       setUser(JSON.parse(dummyUserData))
     }
-    
-    // If no folder parameter, redirect to applications page
-    if (!folder) {
-      navigate.push('/folders')
-      return
-    }
-    
     setLoading(false)
-  }, [navigate, folder])
+  }, [navigate])
 
   if (loading) {
     return (
@@ -53,9 +44,9 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <DashboardComponent folder={folder || undefined} />
+      <FolderGrid />
     </div>
   )
 }
 
-export default Dashboard
+export default ApplicationsPage

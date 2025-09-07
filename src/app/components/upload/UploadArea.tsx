@@ -20,7 +20,13 @@ interface FileWithProgress {
   }
 }
 
-export function UploadArea() {
+interface UploadAreaProps {
+  folder?: string
+  onUploadComplete?: () => void
+  onUploadStart?: () => void
+}
+
+export function UploadArea({ folder, onUploadComplete, onUploadStart }: UploadAreaProps) {
   const [files, setFiles] = useState<FileWithProgress[]>([])
   const [isDragOver, setIsDragOver] = useState(false)
   const { toast } = useToast()
@@ -102,6 +108,11 @@ export function UploadArea() {
     
     if (pendingFiles.length === 0) return
     
+    // Trigger polling in parent components when upload starts
+    if (onUploadStart) {
+      onUploadStart()
+    }
+    
     // Show initial toast for multiple file upload
     toast({
       title: "Starting uploads",
@@ -111,11 +122,14 @@ export function UploadArea() {
     // Process all files simultaneously using Promise.all
     const uploadPromises = pendingFiles.map(async (fileItem) => {
       try {
+        // Always construct filename with folder prefix (no root uploads allowed)
+        const fileName = `${folder}/${fileItem.file.name}`;
+        
         // Step 1: Get SAS URL
         const sasRes = await fetch("/api/get-sas-url", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileName: fileItem.file.name }),
+          body: JSON.stringify({ fileName }),
         });
 
         const { uploadUrl } = await sasRes.json();
@@ -157,8 +171,13 @@ export function UploadArea() {
           description: `${fileItem.file.name} has been uploaded successfully. Starting analysis...`
         })
 
+        // Trigger immediate refresh to show new file
+        if (onUploadComplete) {
+          onUploadComplete()
+        }
+
         // Step 3: Start document analysis
-        await analyzeDocument(fileItem.id, fileItem.file.name, uploadUrl);
+        await analyzeDocument(fileItem.id, fileName, uploadUrl);
 
       } catch (error) {
         setFiles(prev => prev.map(f => 
@@ -192,6 +211,11 @@ export function UploadArea() {
         description: `${successful} file${successful > 1 ? 's' : ''} successful, ${failed} failed.`,
         variant: failed > successful ? "destructive" : "default"
       })
+    }
+
+    // Trigger final refresh after all files are processed
+    if (successful > 0 && onUploadComplete) {
+      onUploadComplete()
     }
   }
 
@@ -231,6 +255,11 @@ export function UploadArea() {
         description: `${fileName} has been analyzed successfully.`
       })
 
+      // Trigger refresh in parent components
+      if (onUploadComplete) {
+        onUploadComplete()
+      }
+
     } catch (error) {
       console.error('Analysis error:', error);
       setFiles(prev => prev.map(f => 
@@ -251,6 +280,15 @@ export function UploadArea() {
     const sizes = ['Bytes', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
+  // Don't render upload functionality if no folder is specified
+  if (!folder) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Please select an application to upload documents.</p>
+      </div>
+    )
   }
 
   return (

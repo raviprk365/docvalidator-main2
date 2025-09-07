@@ -123,7 +123,14 @@ const getStatusBadge = (status: string) => {
   }
 }
 
-export function FileTable() {
+interface FileTableProps {
+  folder?: string
+  refreshTrigger?: number
+  onRefresh?: () => void
+  startPolling?: boolean
+}
+
+export function FileTable({ folder, refreshTrigger, onRefresh, startPolling }: FileTableProps = {}) {
   const [files, setFiles] = useState<FileData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -134,9 +141,9 @@ export function FileTable() {
   const [isPolling, setIsPolling] = useState(false)
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null)
 
+  // Load files only once when component mounts
   useEffect(() => {
     fetchFiles()
-    startPolling()
     
     // Cleanup polling on unmount
     return () => {
@@ -144,16 +151,31 @@ export function FileTable() {
     }
   }, [])
 
-  // Restart polling when processing status changes
+  // React to refresh trigger from parent components
   useEffect(() => {
-    const hasProcessingFiles = files.some(file => file.status === 'processing' || file.status === 'pending')
-    
-    if (hasProcessingFiles && !isPolling) {
-      startPolling()
-    } else if (!hasProcessingFiles && isPolling) {
+    if (refreshTrigger && refreshTrigger > 0) {
+      fetchFiles()
+      if (onRefresh) {
+        onRefresh()
+      }
+    }
+  }, [refreshTrigger])
+
+  // Start/stop polling based on startPolling prop and file status
+  useEffect(() => {
+    if (startPolling) {
+      const hasProcessingFiles = files.some(file => file.status === 'processing' || file.status === 'pending')
+      
+      if (hasProcessingFiles && !isPolling) {
+        startPollingInternal()
+      } else if (!hasProcessingFiles && isPolling) {
+        stopPolling()
+      }
+    } else if (isPolling) {
+      // Stop polling if startPolling becomes false
       stopPolling()
     }
-  }, [files, isPolling])
+  }, [startPolling, files, isPolling])
 
   const fetchFiles = async (isBackgroundRefresh = false) => {
     try {
@@ -162,7 +184,14 @@ export function FileTable() {
         setError(null)
       }
       
-      const response = await fetch('/api/get-files')
+      if (!folder) {
+        setError('Application folder is required')
+        setLoading(false)
+        return
+      }
+      
+      const url = `/api/get-files?folder=${encodeURIComponent(folder)}`
+      const response = await fetch(url)
       
       if (!response.ok) {
         throw new Error('Failed to fetch files')
@@ -198,32 +227,53 @@ export function FileTable() {
     }
   }
 
-  const startPolling = () => {
+  const startPollingInternal = () => {
     if (refreshInterval) return // Prevent multiple intervals
     
     setIsPolling(true)
     const interval = setInterval(async () => {
       try {
-        const response = await fetch('/api/get-files')
+        if (!folder) return
+        
+        const url = `/api/get-files?folder=${encodeURIComponent(folder)}`
+        const response = await fetch(url)
         if (response.ok) {
           const data = await response.json()
           const newFiles = data.files || []
           
-          // Check if any processing files have completed
-          const hasStatusChanges = newFiles.some((newFile: FileData) => {
-            const currentFile = files.find(f => f.id === newFile.id)
-            return currentFile && currentFile.status !== newFile.status
-          })
+          // Check if any files have changed (status, new files, etc.)
+          const hasChanges = 
+            newFiles.length !== files.length || 
+            newFiles.some((newFile: FileData) => {
+              const currentFile = files.find(f => f.id === newFile.id)
+              return !currentFile || currentFile.status !== newFile.status
+            })
           
-          if (hasStatusChanges) {
-            console.log('Analysis status changes detected, updating files...')
+          if (hasChanges) {
+            console.log('File changes detected, updating files...')
             setFiles(newFiles)
+            
+            // Check if all files are now analyzed/completed and stop polling
+            const hasProcessingFiles = newFiles.some((file: FileData) => 
+              file.status === 'processing' || file.status === 'pending'
+            )
+            
+            if (!hasProcessingFiles) {
+              console.log('All files analyzed, stopping polling...')
+              setTimeout(() => {
+                setIsPolling(false)
+                if (refreshInterval) {
+                  clearInterval(refreshInterval)
+                  setRefreshInterval(null)
+                }
+              }, 1000) // Small delay to ensure UI updates
+            }
           }
         }
       } catch (error) {
         console.error('Polling error:', error)
       }
-    }, 5000) // Poll every 5 seconds
+    }, 3000) // Poll every 3 seconds for faster updates
     
     setRefreshInterval(interval)
   }

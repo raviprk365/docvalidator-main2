@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { ChevronLeft, ChevronRight, Home, BarChart3 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, FolderOpen, BarChart3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export function PageNavigation() {
@@ -57,8 +57,8 @@ export function PageNavigation() {
     }
   }
 
-  const handleHome = () => {
-    router.push('/dashboard')
+  const handleApplications = () => {
+    router.push('/folders')
   }
 
   const handleAnalysis = () => {
@@ -94,14 +94,14 @@ export function PageNavigation() {
       {/* Quick navigation buttons */}
       <div className="flex items-center space-x-1">
         <Button
-          variant={pathname === '/dashboard' ? 'default' : 'outline'}
+          variant={pathname === '/folders' ? 'default' : 'outline'}
           size="sm"
-          onClick={handleHome}
+          onClick={handleApplications}
           className="p-2 h-8"
-          title="Dashboard"
+          title="Applications"
         >
-          <Home className="w-4 h-4 mr-1" />
-          <span className="hidden sm:inline">Dashboard</span>
+          <FolderOpen className="w-4 h-4 mr-1" />
+          <span className="hidden sm:inline">Applications</span>
         </Button>
         <Button
           variant={pathname === '/analysis' ? 'default' : 'outline'}

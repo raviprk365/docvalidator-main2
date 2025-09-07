@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { FileText, Upload, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { FileText, Upload, CheckCircle, XCircle, Clock, ArrowLeft } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FileTable } from './FileTable'
 import { UploadArea } from '../upload/UploadArea'
@@ -31,7 +31,11 @@ interface FileData {
   url?: string
 }
 
-export function Dashboard() {
+interface DashboardProps {
+  folder?: string
+}
+
+export function Dashboard({ folder }: DashboardProps = {}) {
   const [user, setUser] = useState<DummyUser | null>(null)
   const router = useRouter()
   const [stats, setStats] = useState<DashboardStats>({
@@ -41,8 +45,9 @@ export function Dashboard() {
     pendingFiles: 0,
     analyzedFiles: 0
   })
-  const [, setFiles] = useState<FileData[]>([])
   const [, setLoading] = useState(true)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [shouldPoll, setShouldPoll] = useState(false)
 
   useEffect(() => {
     // Get dummy user from localStorage
@@ -56,7 +61,15 @@ export function Dashboard() {
   const fetchFilesAndUpdateStats = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/get-files')
+      
+      if (!folder) {
+        // No folder specified, redirect to applications page
+        router.push('/folders')
+        return
+      }
+      
+      const url = `/api/get-files?folder=${encodeURIComponent(folder)}`
+      const response = await fetch(url)
       
       if (!response.ok) {
         throw new Error('Failed to fetch files')
@@ -64,7 +77,6 @@ export function Dashboard() {
       
       const data = await response.json()
       const filesList = data.files || []
-      setFiles(filesList)
       
       // Calculate real stats from fetched files
       const newStats = filesList.reduce(
@@ -99,6 +111,17 @@ export function Dashboard() {
       setLoading(false)
     }
   }
+
+  // Function to trigger refresh from child components
+  const triggerRefresh = () => {
+    setRefreshTrigger(prev => prev + 1)
+  }
+
+  // Function to start polling when upload begins
+  const startPolling = () => {
+    setShouldPoll(true)
+  }
+
 
   const statCards = [
     {
@@ -146,9 +169,21 @@ export function Dashboard() {
     <div className="container mx-auto px-4 py-8 space-y-8">
       {/* Welcome Section */}
       <div className="animate-fade-in">
-        <h1 className="text-3xl font-semibold mb-2">Upload and Validate Documents</h1>
+        <div className="mb-4">
+          <Button 
+            variant="outline" 
+            onClick={() => router.push('/folders')}
+            className="flex items-center space-x-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Applications</span>
+          </Button>
+        </div>
+        <h1 className="text-3xl font-semibold mb-2">
+          {folder} - Document Management
+        </h1>
         <p className="text-muted-foreground">
-          Upload your documents for AI-powered validation and analysis
+          Upload and manage documents in the {folder} application
         </p>
       </div>
 
@@ -180,7 +215,7 @@ export function Dashboard() {
             Choose single file upload or drag and drop multiple files for bulk processing
           </p>
         </div>
-        <UploadArea />
+        <UploadArea folder={folder} onUploadComplete={triggerRefresh} onUploadStart={startPolling} />
       </div>
 
       {/**Analysis Section */}
@@ -218,7 +253,7 @@ export function Dashboard() {
             View, manage, and analyze your uploaded documents
           </p>
         </div>
-        <FileTable />
+        <FileTable folder={folder} refreshTrigger={refreshTrigger} onRefresh={fetchFilesAndUpdateStats} startPolling={shouldPoll} />
       </div>
     </div>
   )
