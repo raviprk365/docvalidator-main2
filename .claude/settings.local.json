@@ -19,7 +19,12 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git remote set-url:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(gh secret set:*)",
+      "Bash(winget install:*)",
+      "Bash(refreshenv)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" --version)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" auth login --web)"
     ],
     "deny": [],
     "ask": []
