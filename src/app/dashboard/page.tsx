@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Header } from '../components/layout/Header'
 import { Dashboard as DashboardComponent } from '../components/dashboard/Dashboard'
@@ -9,7 +9,7 @@ type DummyUser = {
   created_at: string
 }
 
-const Dashboard = () => {
+const DashboardContent = () => {
   const [user, setUser] = useState<DummyUser | null>(null)
   const [loading, setLoading] = useState(true)
   const navigate = useRouter()
@@ -55,6 +55,21 @@ const Dashboard = () => {
       <Header />
       <DashboardComponent folder={folder || undefined} />
     </div>
+  )
+}
+
+const Dashboard = () => {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   )
 }
 
