@@ -298,12 +298,12 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
         </div>
 
         {/* Main Content */}
-        <div className="flex flex-1 overflow-hidden flex-col lg:flex-row">
+        <div className="flex flex-1 overflow-y-auto flex-col lg:flex-row">
           {/* Document Viewer - Left Side */}
-          <div className="flex-1 bg-gray-100 p-4 lg:p-6 overflow-hidden min-h-[300px] lg:min-h-0">
+          <div className="flex-1 bg-gray-100 p-4 lg:p-6 overflow-y-auto min-h-[300px] lg:min-h-0">
             <div className="h-full flex items-center justify-center">
               {isPdf ? (
-                <div className="w-full h-full bg-white shadow-lg rounded-lg overflow-hidden">
+                <div className="w-full h-full bg-white shadow-lg rounded-lg overflow-y-auto">
                   <iframe
                     src={document.url || '/api/placeholder-pdf'}
                     className="w-full h-full border-0"
@@ -360,7 +360,7 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
             </div>
 
             {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
                 <TabsContent value="analysis" className="h-full p-0 mt-0">
                   <ScrollArea className="h-full">
@@ -411,7 +411,7 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
                             </Badge>
                           </div>
                           
-                          <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 max-h-64 overflow-y-auto pr-2">
                             {keyValuePairs.map((pair, index) => (
                               <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                                 <div className="space-y-2">
@@ -453,7 +453,7 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
                           </h4>
                           <Badge variant="outline" className="text-xs">JSON</Badge>
                         </div>
-                        <div className="bg-slate-950 text-slate-100 rounded-lg border border-slate-200 overflow-hidden">
+                        <div className="bg-slate-950 text-slate-100 rounded-lg border border-slate-200 overflow-y-auto">
                           <div className="bg-slate-900 px-3 py-2 border-b border-slate-700">
                             <span className="text-xs text-slate-300 font-medium">Analysis Response</span>
                           </div>
