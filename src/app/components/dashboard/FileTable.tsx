@@ -19,6 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { DocumentViewer } from './DocumentViewer'
 import { DocumentModal } from './DocumentModal'
 
@@ -488,104 +489,170 @@ export function FileTable({ folder, refreshTrigger, onRefresh, startPolling }: F
                               <Eye className="w-4 h-4" />
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-[95vw] w-[95vw]">
-                            <DialogHeader>
-                              <DialogTitle>Analysis Results</DialogTitle>
-                              <DialogDescription>
+                          <DialogContent className="max-w-[90vw] w-[90vw] max-h-[90vh] flex flex-col p-0">
+                            <DialogHeader className="flex-shrink-0 px-6 py-4 border-b bg-white">
+                              <DialogTitle className="text-xl font-semibold">Analysis Results</DialogTitle>
+                              <DialogDescription className="text-sm text-muted-foreground mt-1">
                                 Detailed validation results for {file.name}
                               </DialogDescription>
                             </DialogHeader>
-                            <div className="space-y-4">
-                              <div className="p-4 bg-muted rounded-lg">
-                                <h4 className="font-medium mb-2">Document Information</h4>
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                  <div>
-                                    <span className="text-muted-foreground">Type:</span>
-                                    <span className="ml-2 font-medium">{file.analysisResult.documentType || 'Unknown'}</span>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Confidence:</span>
-                                    <span className="ml-2 font-medium">
-                                      {file.analysisResult.confidence ? 
-                                        `${(file.analysisResult.confidence * 100).toFixed(1)}%` : 
-                                        'N/A'}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Status:</span>
-                                    <span className="ml-2 font-medium">{file.analysisResult.status || 'Unknown'}</span>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Processed:</span>
-                                    <span className="ml-2 font-medium">
-                                      {file.analysisResult.processedAt ? 
-                                        new Date(file.analysisResult.processedAt).toLocaleString() : 
-                                        'N/A'}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {file.analysisResult.extractedData?.keyValuePairs && file.analysisResult.extractedData.keyValuePairs.length > 0 && (
-                                <div className="p-4 bg-card border rounded-lg">
-                                  <h4 className="font-medium mb-2">Extracted Key-Value Pairs</h4>
-                                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                                    {file.analysisResult.extractedData.keyValuePairs.map((pair: { key: string; value: string; confidence: number }, index: number) => (
-                                      <div key={index} className="flex justify-between items-start text-sm">
-                                        <span className="font-medium text-muted-foreground min-w-0 flex-1 mr-2">
-                                          {pair.key}:
-                                        </span>
-                                        <span className="text-right min-w-0 flex-2">
-                                          {pair.value} 
-                                          {pair.confidence && (
-                                            <span className="text-xs text-muted-foreground ml-1">
-                                              ({Math.round(pair.confidence * 100)}%)
-                                            </span>
-                                          )}
-                                        </span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              {file.analysisResult.extractedData?.tables && file.analysisResult.extractedData.tables.length > 0 && (
-                                <div className="p-4 bg-card border rounded-lg">
-                                  <h4 className="font-medium mb-2">Extracted Tables</h4>
-                                  <p className="text-sm text-muted-foreground">
-                                    Found {file.analysisResult.extractedData.tables.length} table(s)
-                                  </p>
-                                  {file.analysisResult.extractedData.tables.map((table: { rowCount: number; columnCount: number }, index: number) => (
-                                    <div key={index} className="mt-2 text-xs">
-                                      Table {index + 1}: {table.rowCount} rows × {table.columnCount} columns
+                            <div className="flex-1 overflow-hidden">
+                              <ScrollArea className="h-full">
+                                <div className="p-6 space-y-6">
+                                  <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                    <div className="flex items-center mb-4">
+                                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
+                                      <h4 className="text-lg font-semibold text-gray-900">Document Information</h4>
                                     </div>
-                                  ))}
-                                </div>
-                              )}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div className="space-y-1">
+                                        <label className="text-sm font-medium text-gray-600">Document Type</label>
+                                        <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                                          <span className="text-sm font-medium text-gray-900">{file.analysisResult.documentType || 'Unknown'}</span>
+                                        </div>
+                                      </div>
+                                      <div className="space-y-1">
+                                        <label className="text-sm font-medium text-gray-600">Confidence Level</label>
+                                        <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                                          <span className="text-sm font-medium text-gray-900">
+                                            {file.analysisResult.confidence ? 
+                                              `${(file.analysisResult.confidence * 100).toFixed(1)}%` : 
+                                              'N/A'}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <div className="space-y-1">
+                                        <label className="text-sm font-medium text-gray-600">Processing Status</label>
+                                        <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                                          <span className="text-sm font-medium text-gray-900">{file.analysisResult.status || 'Unknown'}</span>
+                                        </div>
+                                      </div>
+                                      <div className="space-y-1">
+                                        <label className="text-sm font-medium text-gray-600">Processed Date</label>
+                                        <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                                          <span className="text-sm font-medium text-gray-900">
+                                            {file.analysisResult.processedAt ? 
+                                              new Date(file.analysisResult.processedAt).toLocaleString() : 
+                                              'N/A'}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
 
-                              {file.analysisResult.extractedData?.text && (
-                                <div className="p-4 bg-card border rounded-lg">
-                                  <h4 className="font-medium mb-2">Extracted Text (Preview)</h4>
-                                  <div className="text-xs bg-muted p-3 rounded max-h-40 overflow-y-auto">
-                                    {file.analysisResult.extractedData.text.substring(0, 500)}
-                                    {file.analysisResult.extractedData.text.length > 500 && '...'}
+                                  {file.analysisResult.extractedData?.keyValuePairs && file.analysisResult.extractedData.keyValuePairs.length > 0 && (
+                                    <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                      <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center">
+                                          <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+                                          <h4 className="text-lg font-semibold text-gray-900">Extracted Information</h4>
+                                        </div>
+                                        <Badge variant="outline" className="text-xs px-2 py-1">
+                                          {file.analysisResult.extractedData.keyValuePairs.length} fields
+                                        </Badge>
+                                      </div>
+                                      <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                        {file.analysisResult.extractedData.keyValuePairs.map((pair: { key: string; value: string; confidence: number }, index: number) => (
+                                          <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                            <div className="space-y-2">
+                                              <div className="flex justify-between items-start">
+                                                <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                                  {pair.key}
+                                                </label>
+                                                <Badge 
+                                                  variant="outline" 
+                                                  className={`text-xs px-1.5 py-0.5 ${
+                                                    pair.confidence >= 0.9 
+                                                      ? 'bg-green-50 text-green-700 border-green-200' 
+                                                      : pair.confidence >= 0.7 
+                                                      ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                                                      : 'bg-red-50 text-red-700 border-red-200'
+                                                  }`}
+                                                >
+                                                  {Math.round(pair.confidence * 100)}%
+                                                </Badge>
+                                              </div>
+                                              <div className="bg-white border border-gray-200 rounded-md p-2">
+                                                <div className="text-sm font-medium text-gray-900 break-all">
+                                                  {pair.value || 'No value detected'}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {file.analysisResult.extractedData?.tables && file.analysisResult.extractedData.tables.length > 0 && (
+                                    <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                      <div className="flex items-center mb-4">
+                                        <div className="w-2 h-2 bg-orange-500 rounded-full mr-3"></div>
+                                        <h4 className="text-lg font-semibold text-gray-900">Extracted Tables</h4>
+                                        <Badge variant="outline" className="text-xs px-2 py-1 ml-auto">
+                                          {file.analysisResult.extractedData.tables.length} table(s)
+                                        </Badge>
+                                      </div>
+                                      <div className="space-y-3">
+                                        {file.analysisResult.extractedData.tables.map((table: { rowCount: number; columnCount: number }, index: number) => (
+                                          <div key={index} className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                                            <div className="text-sm font-medium text-gray-900">
+                                              Table {index + 1}: {table.rowCount} rows × {table.columnCount} columns
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {file.analysisResult.extractedData?.text && (
+                                    <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                      <div className="flex items-center mb-4">
+                                        <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
+                                        <h4 className="text-lg font-semibold text-gray-900">Extracted Text Preview</h4>
+                                      </div>
+                                      <div className="bg-gray-50 border border-gray-200 rounded-md p-3 max-h-40 overflow-y-auto">
+                                        <div className="text-sm text-gray-900 whitespace-pre-wrap font-mono">
+                                          {file.analysisResult.extractedData.text.substring(0, 500)}
+                                          {file.analysisResult.extractedData.text.length > 500 && '...'}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {file.analysisResult.error && (
+                                    <div className="bg-red-50 border border-red-200 rounded-lg p-5">
+                                      <div className="flex items-center mb-4">
+                                        <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
+                                        <h4 className="text-lg font-semibold text-red-900">Processing Error</h4>
+                                      </div>
+                                      <div className="bg-white border border-red-200 rounded-md p-3">
+                                        <p className="text-sm text-red-700">{file.analysisResult.error}</p>
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                    <div className="flex items-center justify-between mb-4">
+                                      <div className="flex items-center">
+                                        <div className="w-2 h-2 bg-gray-500 rounded-full mr-3"></div>
+                                        <h4 className="text-lg font-semibold text-gray-900">Raw Analysis Data</h4>
+                                      </div>
+                                      <Badge variant="outline" className="text-xs">JSON</Badge>
+                                    </div>
+                                    <div className="bg-slate-950 text-slate-100 rounded-lg border border-slate-200 overflow-hidden">
+                                      <div className="bg-slate-900 px-3 py-2 border-b border-slate-700">
+                                        <span className="text-xs text-slate-300 font-medium">Analysis Response</span>
+                                      </div>
+                                      <div className="p-3 max-h-60 overflow-auto">
+                                        <pre className="text-xs whitespace-pre-wrap break-words font-mono leading-relaxed text-slate-100">
+                                          {JSON.stringify(file.analysisResult, null, 2)}
+                                        </pre>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
-                              )}
-                              
-                              {file.analysisResult.error && (
-                                <div className="p-4 bg-destructive-muted rounded-lg">
-                                  <h4 className="font-medium mb-2 text-destructive">Error</h4>
-                                  <p className="text-sm text-destructive">{file.analysisResult.error}</p>
-                                </div>
-                              )}
-                              
-                              <div className="p-4 bg-card border rounded-lg">
-                                <h4 className="font-medium mb-2">Raw Analysis Data</h4>
-                                <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-60">
-                                  {JSON.stringify(file.analysisResult, null, 2)}
-                                </pre>
-                              </div>
+                              </ScrollArea>
                             </div>
                           </DialogContent>
                         </Dialog>

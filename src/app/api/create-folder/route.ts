@@ -44,8 +44,7 @@ export async function POST(request: Request) {
     let folderExists = false;
     try {
       for await (const _blob of containerClient.listBlobsFlat({ 
-        prefix: `${sanitizedFolderName}/`,
-        maxPageSize: 1 
+        prefix: `${sanitizedFolderName}/`
       })) {
         folderExists = true;
         break;

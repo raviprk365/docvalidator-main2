@@ -64,7 +64,7 @@ export async function GET(request: Request) {
             const analysisFileName = `${blob.name}.analysis.json`;
             const analysisBlobClient = containerClient.getBlobClient(analysisFileName);
             const downloadResponse = await analysisBlobClient.download(0);
-            const analysisData = await streamToString(downloadResponse.readableStreamBody as any);
+            const analysisData = await streamToString(downloadResponse.readableStreamBody as NodeJS.ReadableStream);
             analysisResult = JSON.parse(analysisData);
           } catch (error) {
             console.log(`No analysis file found for ${blob.name}`);
@@ -120,28 +120,13 @@ export async function GET(request: Request) {
 }
 
 // Helper function to convert stream to string
-async function streamToString(readableStream: any): Promise<string> {
-  const reader = readableStream.getReader();
-  const chunks: Uint8Array[] = [];
-  
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(value);
-    }
-  } finally {
-    reader.releaseLock();
-  }
-  
-  const concatenated = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
-  let offset = 0;
-  for (const chunk of chunks) {
-    concatenated.set(chunk, offset);
-    offset += chunk.length;
-  }
-  
-  return new TextDecoder().decode(concatenated);
+async function streamToString(readableStream: NodeJS.ReadableStream): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    readableStream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+    readableStream.on('error', (err) => reject(err));
+    readableStream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+  });
 }
 
 // Helper function to format bytes

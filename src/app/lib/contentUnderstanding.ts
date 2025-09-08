@@ -42,7 +42,7 @@ export interface ContentUnderstandingResponse {
     contents?: Array<{
       docType: string;
       confidence: number;
-      fields: Record<string, any>;
+      fields: Record<string, unknown>;
     }>;
     content: string;
     pages?: Array<{
@@ -273,7 +273,7 @@ export class AzureContentUnderstandingClient {
 
     // Extract key-value pairs from document fields
     const keyValuePairs = document?.fields
-      ? Object.entries(document.fields).map(([key, value]: [string, any]) => ({
+      ? Object.entries(document.fields).map(([key, value]: [string, unknown]) => ({
           key,
           value: typeof value === 'object' ? (value.valueString || value.content || JSON.stringify(value)) : String(value),
           confidence: typeof value === 'object' ? value.confidence || 0 : 1,

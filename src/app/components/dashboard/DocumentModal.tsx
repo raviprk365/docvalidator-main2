@@ -72,24 +72,86 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
     Object.values(kvGroups).forEach(group => {
       if (group.key && group.value) {
         let parsedValue = group.value
-        // Try to parse JSON values like dates and booleans
+        
+        // Enhanced parsing for complex JSON values
         try {
           const parsed = JSON.parse(group.value)
+          
+          // Handle date objects
           if (parsed.valueDate) {
-            parsedValue = new Date(parsed.valueDate).toLocaleDateString()
-          } else if (parsed.valueBoolean !== undefined) {
+            parsedValue = new Date(parsed.valueDate).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long', 
+              day: 'numeric'
+            })
+          } 
+          // Handle boolean objects
+          else if (parsed.valueBoolean !== undefined) {
             parsedValue = parsed.valueBoolean ? 'Yes' : 'No'
-          } else if (parsed.valueString) {
+          } 
+          // Handle string objects
+          else if (parsed.valueString !== undefined && parsed.valueString !== null) {
             parsedValue = parsed.valueString
           }
+          // Handle number objects
+          else if (parsed.valueNumber !== undefined && parsed.valueNumber !== null) {
+            parsedValue = parsed.valueNumber.toString()
+          }
+          // Handle simple string values that are JSON encoded
+          else if (typeof parsed === 'string') {
+            parsedValue = parsed
+          }
+          // Handle objects with type property - extract meaningful data
+          else if (parsed.type) {
+            // Skip type-only objects without meaningful content
+            if (Object.keys(parsed).length === 1 && parsed.type) {
+              return // Skip this entry
+            }
+            // Try to find the actual value in the object
+            const meaningfulValue = Object.entries(parsed)
+              .find(([k, v]) => k !== 'type' && v !== null && v !== undefined && v !== '')
+            if (meaningfulValue) {
+              parsedValue = meaningfulValue[1] as string
+            } else {
+              return // Skip if no meaningful value found
+            }
+          }
         } catch {
+          // If not valid JSON, check if it starts with complex object notation
+          if (group.value.startsWith('{"type":')) {
+            return // Skip complex type objects that couldn't be parsed
+          }
           // Keep original value if not JSON
+          parsedValue = group.value
         }
         
-        // Only add if the value is meaningful (not empty, not just type info)
-        if (parsedValue && parsedValue.trim() && !parsedValue.includes('{"type":')) {
+        // Clean up the value
+        parsedValue = parsedValue?.toString().trim()
+        
+        // Only add if the value is meaningful
+        if (parsedValue && 
+            parsedValue !== 'null' && 
+            parsedValue !== 'undefined' && 
+            parsedValue !== '{}' &&
+            parsedValue !== '[]' &&
+            !parsedValue.includes('{"type":') &&
+            parsedValue.length > 0) {
+          
+          // Format key for better readability
+          let formattedKey = group.key
+          if (formattedKey) {
+            // Convert camelCase to Title Case
+            formattedKey = formattedKey.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+            // Handle common abbreviations
+            formattedKey = formattedKey
+              .replace(/\bGst\b/g, 'GST')
+              .replace(/\bDoc Type\b/g, 'Document Type')
+              .replace(/\bLga\b/g, 'Local Government Area')
+              .replace(/\bId\b/g, 'ID')
+          }
+          
           kvPairs.push({
-            key: group.key,
+            key: formattedKey,
             value: parsedValue,
             confidence: parseFloat(group.confidence || '1') || 1
           })
@@ -138,28 +200,6 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
   const documentType = getDocumentType()
   const confidence = parseFloat(document.metadata?.confidence || '1') || document.analysisResult?.confidence || 1
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <Badge className="bg-green-600 text-white hover:bg-green-700">Approved</Badge>
-      case 'rejected':
-        return <Badge className="bg-red-600 text-white hover:bg-red-700">Rejected</Badge>
-      case 'processing':
-        return <Badge className="bg-yellow-600 text-white hover:bg-yellow-700">Processing</Badge>
-      case 'analyzed':
-        return <Badge className="bg-green-600 text-white hover:bg-green-700">Analyzed</Badge>
-      case 'pending':
-        return <Badge className="bg-gray-600 text-white hover:bg-gray-700">Pending</Badge>
-      default:
-        return <Badge variant="secondary">{status}</Badge>
-    }
-  }
-
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.9) return 'text-green-600'
-    if (confidence >= 0.7) return 'text-yellow-600'
-    return 'text-red-600'
-  }
 
   const isPdf = document.name.toLowerCase().endsWith('.pdf')
   const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(document.name)
@@ -220,9 +260,9 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] w-[95vw] flex flex-col p-0">
+      <DialogContent className="max-w-[95vw] max-h-[95vh] w-[95vw] xl:max-w-[90vw] xl:w-[90vw] 2xl:max-w-[85vw] 2xl:w-[85vw] flex flex-col p-0">
         {/* Header */}
-        <DialogHeader className="flex flex-row items-center justify-between p-6 pb-4 space-y-0">
+        <DialogHeader className="flex-1 flex flex-row items-center justify-between p-6 pb-4 space-y-0">
           <div className="flex items-center space-x-4">
             <DialogTitle className="text-xl font-semibold">
               {documentType}
@@ -258,9 +298,9 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
         </div>
 
         {/* Main Content */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 overflow-hidden flex-col lg:flex-row">
           {/* Document Viewer - Left Side */}
-          <div className="flex-1 bg-gray-100 p-6 overflow-hidden">
+          <div className="flex-1 bg-gray-100 p-4 lg:p-6 overflow-hidden min-h-[300px] lg:min-h-0">
             <div className="h-full flex items-center justify-center">
               {isPdf ? (
                 <div className="w-full h-full bg-white shadow-lg rounded-lg overflow-hidden">
@@ -300,9 +340,9 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
           </div>
 
           {/* Properties Panel - Right Side */}
-          <div className="w-80 bg-background border-l flex flex-col">
-            {/* AI Rating Header */}
-            <div className="p-6 pb-4">
+          <div className="w-full lg:w-80 xl:w-96 2xl:w-[420px] bg-background border-t lg:border-t-0 lg:border-l flex flex-col min-h-[400px] lg:min-h-0">
+            {/* AI Rating Header - Fixed */}
+            <div className="flex-shrink-0 p-6 pb-4 border-b bg-white">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">AI Rating</h3>
                 <Badge className="bg-green-50 text-green-700 border-green-200">
@@ -316,66 +356,123 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
                   <TabsTrigger value="analysis">Analysis</TabsTrigger>
                   <TabsTrigger value="approvals">Approvals</TabsTrigger>
                 </TabsList>
+              </Tabs>
+            </div>
 
-                <TabsContent value="analysis" className="mt-4 space-y-4">
-                  {/* Document Type */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm font-medium">Document Type</label>
-                      <Badge className="bg-green-50 text-green-700 border-green-200">
-                        {Math.round(confidence * 100)}%
-                      </Badge>
-                    </div>
-                    <select className="w-full p-2 border border-gray-300 rounded-md bg-white">
-                      <option>{documentType}</option>
-                    </select>
-                  </div>
-
-                  {/* Criteria */}
-                  <div>
-                    <h4 className="text-sm font-medium mb-3">Criteria</h4>
-                    <div className="space-y-2">
-                      {criteriaItems.map((item, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <CheckCircle className={`w-4 h-4 ${item.checked ? 'text-green-600' : 'text-gray-300'}`} />
-                          <span className="text-sm">{item.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Extracted Data */}
-                  {keyValuePairs.length > 0 && (
-                    <ScrollArea className="flex-1">
-                      <div className="space-y-3">
-                        <h4 className="text-sm font-medium">Extracted Information</h4>
-                        {keyValuePairs.map((pair, index) => (
-                          <div key={index} className="space-y-1">
-                            <div className="flex justify-between items-center">
-                              <label className="text-xs text-muted-foreground font-medium">
-                                {pair.key}
-                              </label>
-                              <Badge variant="outline" className="text-xs">
-                                {Math.round(pair.confidence * 100)}%
-                              </Badge>
-                            </div>
-                            <input
-                              type="text"
-                              value={pair.value}
-                              readOnly
-                              className="w-full p-2 text-sm border border-gray-300 rounded-md bg-gray-50"
-                            />
+            {/* Scrollable Content Area */}
+            <div className="flex-1 overflow-hidden">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
+                <TabsContent value="analysis" className="h-full p-0 mt-0">
+                  <ScrollArea className="h-full">
+                    <div className="p-6 space-y-6">
+                      {/* Document Information Section */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
+                        <h4 className="text-base font-semibold text-gray-900 flex items-center">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                          Document Information
+                        </h4>
+                        
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <label className="text-sm font-medium text-gray-600">Document Type</label>
+                            <Badge className="bg-green-50 text-green-700 border-green-200 text-xs">
+                              {Math.round(confidence * 100)}% confidence
+                            </Badge>
                           </div>
-                        ))}
+                          <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                            <div className="text-sm font-medium text-gray-900">{documentType}</div>
+                          </div>
+                        </div>
+
+                        {/* Criteria */}
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-700 mb-3">Validation Criteria</h5>
+                          <div className="space-y-2">
+                            {criteriaItems.map((item, index) => (
+                              <div key={index} className="flex items-center space-x-2">
+                                <CheckCircle className={`w-4 h-4 ${item.checked ? 'text-green-600' : 'text-gray-300'}`} />
+                                <span className="text-sm text-gray-700">{item.label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                    </ScrollArea>
-                  )}
+
+                      {/* Extracted Data Section */}
+                      {keyValuePairs.length > 0 && (
+                        <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-base font-semibold text-gray-900 flex items-center">
+                              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                              Extracted Information
+                            </h4>
+                            <Badge variant="outline" className="text-xs px-2 py-1">
+                              {keyValuePairs.length} fields
+                            </Badge>
+                          </div>
+                          
+                          <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                            {keyValuePairs.map((pair, index) => (
+                              <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                <div className="space-y-2">
+                                  <div className="flex justify-between items-start">
+                                    <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                      {pair.key}
+                                    </label>
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`text-xs px-1.5 py-0.5 ${
+                                        pair.confidence >= 0.9 
+                                          ? 'bg-green-50 text-green-700 border-green-200' 
+                                          : pair.confidence >= 0.7 
+                                          ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                                          : 'bg-red-50 text-red-700 border-red-200'
+                                      }`}
+                                    >
+                                      {Math.round(pair.confidence * 100)}%
+                                    </Badge>
+                                  </div>
+                                  <div className="bg-white border border-gray-200 rounded-md p-2">
+                                    <div className="text-sm font-medium text-gray-900 break-all">
+                                      {pair.value || 'No value detected'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Raw Analysis Data Section */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-base font-semibold text-gray-900 flex items-center">
+                            <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                            Raw Analysis Results
+                          </h4>
+                          <Badge variant="outline" className="text-xs">JSON</Badge>
+                        </div>
+                        <div className="bg-slate-950 text-slate-100 rounded-lg border border-slate-200 overflow-hidden">
+                          <div className="bg-slate-900 px-3 py-2 border-b border-slate-700">
+                            <span className="text-xs text-slate-300 font-medium">Analysis Response</span>
+                          </div>
+                          <div className="p-3 max-h-48 overflow-auto">
+                            <pre className="text-xs whitespace-pre-wrap break-words font-mono leading-relaxed text-slate-100">
+                              {document.analysisResult ? 
+                                JSON.stringify(document.analysisResult, null, 2) : 
+                                'No analysis results available'
+                              }
+                            </pre>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </ScrollArea>
                 </TabsContent>
 
-                <TabsContent value="approvals" className="mt-4">
-                  <div className="space-y-4">
+                <TabsContent value="approvals" className="h-full p-0 mt-0">
+                  <div className="p-6 h-full flex items-center justify-center">
                     <div className="text-center py-8">
                       <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-2" />
                       <p className="text-sm text-muted-foreground">No approval workflow configured</p>

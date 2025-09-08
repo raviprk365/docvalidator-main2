@@ -19,7 +19,7 @@ export type UploadedFile = {
   file_type: string
   upload_path: string
   status: 'pending' | 'processing' | 'approved' | 'rejected'
-  analysis_result?: any
+  analysis_result?: unknown
   created_at: string
   updated_at: string
 }
