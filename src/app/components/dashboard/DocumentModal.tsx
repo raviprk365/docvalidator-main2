@@ -1,11 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import Image from 'next/image'
-import { X, Eye, CheckCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/app/components/ui/checkbox'
+import { ScrollArea } from '@/app/components/ui/scroll-area'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -13,8 +11,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ScrollArea } from '@/app/components/ui/scroll-area'
-import { Separator } from '@/app/components/ui/separator'
+import { CheckCircle, Eye, X } from 'lucide-react'
+import Image from 'next/image'
+import { useState } from 'react'
 
 interface FileData {
   id: string
@@ -55,10 +54,10 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
   // Parse blob metadata into structured key-value pairs
   const parseMetadataToKeyValuePairs = (metadata: Record<string, string>) => {
     const kvPairs: Array<{ key: string; value: string; confidence: number }> = []
-    
+
     // Group metadata by key-value pairs (kv0key/kv0value/kv0confidence pattern)
     const kvGroups: Record<string, { key?: string; value?: string; confidence?: string }> = {}
-    
+
     Object.entries(metadata).forEach(([key, value]) => {
       const kvMatch = key.match(/^kv(\d+)(key|value|confidence)$/)
       if (kvMatch) {
@@ -67,28 +66,28 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
         kvGroups[index][type as keyof typeof kvGroups[string]] = value
       }
     })
-    
+
     // Convert grouped data to key-value pairs
     Object.values(kvGroups).forEach(group => {
       if (group.key && group.value) {
         let parsedValue = group.value
-        
+
         // Enhanced parsing for complex JSON values
         try {
           const parsed = JSON.parse(group.value)
-          
+
           // Handle date objects
           if (parsed.valueDate) {
             parsedValue = new Date(parsed.valueDate).toLocaleDateString('en-US', {
               year: 'numeric',
-              month: 'long', 
+              month: 'long',
               day: 'numeric'
             })
-          } 
+          }
           // Handle boolean objects
           else if (parsed.valueBoolean !== undefined) {
             parsedValue = parsed.valueBoolean ? 'Yes' : 'No'
-          } 
+          }
           // Handle string objects
           else if (parsed.valueString !== undefined && parsed.valueString !== null) {
             parsedValue = parsed.valueString
@@ -124,19 +123,19 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
           // Keep original value if not JSON
           parsedValue = group.value
         }
-        
+
         // Clean up the value
         parsedValue = parsedValue?.toString().trim()
-        
+
         // Only add if the value is meaningful
-        if (parsedValue && 
-            parsedValue !== 'null' && 
-            parsedValue !== 'undefined' && 
-            parsedValue !== '{}' &&
-            parsedValue !== '[]' &&
-            !parsedValue.includes('{"type":') &&
-            parsedValue.length > 0) {
-          
+        if (parsedValue &&
+          parsedValue !== 'null' &&
+          parsedValue !== 'undefined' &&
+          parsedValue !== '{}' &&
+          parsedValue !== '[]' &&
+          !parsedValue.includes('{"type":') &&
+          parsedValue.length > 0) {
+
           // Format key for better readability
           let formattedKey = group.key
           if (formattedKey) {
@@ -149,7 +148,7 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
               .replace(/\bLga\b/g, 'Local Government Area')
               .replace(/\bId\b/g, 'ID')
           }
-          
+
           kvPairs.push({
             key: formattedKey,
             value: parsedValue,
@@ -158,7 +157,7 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
         }
       }
     })
-    
+
     return kvPairs
   }
 
@@ -170,33 +169,33 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
         return metadataKVPairs
       }
     }
-    
+
     // Fallback to analysisResult
     if (document.analysisResult?.extractedData?.keyValuePairs) {
       return document.analysisResult.extractedData.keyValuePairs
     }
-    
+
     return []
   }
 
   const keyValuePairs = getKeyValuePairs()
-  
+
   // Get document type from DocType key-value pair first, then fallback to metadata
   const getDocumentType = () => {
     // First try to find DocType in the parsed key-value pairs
     const docTypeFromKV = keyValuePairs.find(kv => kv.key.toLowerCase() === 'doctype')?.value
     if (docTypeFromKV) return docTypeFromKV
-    
+
     // Then try metadata fields
     if (document.metadata?.documenttype) return document.metadata.documenttype
     if (document.metadata?.doctype) return document.metadata.doctype
-    
+
     // Finally fallback to analysisResult
     if (document.analysisResult?.documentType) return document.analysisResult.documentType
-    
+
     return 'Document'
   }
-  
+
   const documentType = getDocumentType()
   const confidence = parseFloat(document.metadata?.confidence || '1') || document.analysisResult?.confidence || 1
 
@@ -207,7 +206,7 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
   // Generate criteria based on actual document data
   const generateCriteriaItems = () => {
     const criteria = []
-    
+
     // Check if document is less than 3 months old
     const dateOfIssue = keyValuePairs.find(kv => kv.key.toLowerCase().includes('date'))?.value
     let isRecent = false
@@ -224,7 +223,7 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
       }
     }
     criteria.push({ label: 'Less than 3 months old', checked: isRecent })
-    
+
     // Check if validity is true (for documents that have validity field)
     const validityKV = keyValuePairs.find(kv => kv.key.toLowerCase().includes('validity'))
     let isValid = true
@@ -232,27 +231,27 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
       isValid = false
     }
     criteria.push({ label: 'Valid certificate format', checked: isValid })
-    
+
     // Check if certificate number is present and has value
-    const hasCertNumber = keyValuePairs.some(kv => 
+    const hasCertNumber = keyValuePairs.some(kv =>
       (kv.key.toLowerCase().includes('certificate') || kv.key.toLowerCase().includes('number')) &&
       kv.value && kv.value.trim() && kv.value !== 'N/A'
     )
     criteria.push({ label: 'Certificate number present', checked: hasCertNumber })
-    
+
     // Check if document type is identified
     const hasDocType = documentType && documentType !== 'Document' && documentType !== 'Unknown'
     criteria.push({ label: 'Document type identified', checked: hasDocType })
-    
+
     // Check if local government area is present
-    const hasLGA = keyValuePairs.some(kv => 
-      kv.key.toLowerCase().includes('local') && 
+    const hasLGA = keyValuePairs.some(kv =>
+      kv.key.toLowerCase().includes('local') &&
       kv.value && kv.value.trim() && kv.value !== 'N/A'
     )
     if (hasLGA) {
       criteria.push({ label: 'Local Government Area present', checked: true })
     }
-    
+
     return criteria
   }
 
@@ -278,8 +277,8 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
               Delete
             </Button>
             <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="mark-rfi" 
+              <Checkbox
+                id="mark-rfi"
                 checked={markForRFI}
                 onCheckedChange={(checked) => setMarkForRFI(checked === true)}
               />
@@ -330,7 +329,7 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
                 </div>
               )}
             </div>
-            
+
             {/* Navigation dots */}
             <div className="flex justify-center mt-4 space-x-2">
               <div className="w-3 h-3 bg-black rounded-full"></div>
@@ -349,7 +348,7 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
                   {Math.round(confidence * 100)}%
                 </Badge>
               </div>
-              
+
               {/* Tabs */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
@@ -371,7 +370,7 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
                           <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
                           Document Information
                         </h4>
-                        
+
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
                             <label className="text-sm font-medium text-gray-600">Document Type</label>
@@ -410,8 +409,8 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
                               {keyValuePairs.length} fields
                             </Badge>
                           </div>
-                          
-                          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 max-h-64 overflow-y-auto pr-2">
+
+                          <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
                             {keyValuePairs.map((pair, index) => (
                               <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                                 <div className="space-y-2">
@@ -419,15 +418,14 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
                                     <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                                       {pair.key}
                                     </label>
-                                    <Badge 
-                                      variant="outline" 
-                                      className={`text-xs px-1.5 py-0.5 ${
-                                        pair.confidence >= 0.9 
-                                          ? 'bg-green-50 text-green-700 border-green-200' 
-                                          : pair.confidence >= 0.7 
+                                    <Badge
+                                      variant="outline"
+                                      className={`text-xs px-1.5 py-0.5 ${pair.confidence >= 0.9
+                                        ? 'bg-green-50 text-green-700 border-green-200'
+                                        : pair.confidence >= 0.7
                                           ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
                                           : 'bg-red-50 text-red-700 border-red-200'
-                                      }`}
+                                        }`}
                                     >
                                       {Math.round(pair.confidence * 100)}%
                                     </Badge>
@@ -459,8 +457,8 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
                           </div>
                           <div className="p-3 max-h-48 overflow-auto">
                             <pre className="text-xs whitespace-pre-wrap break-words font-mono leading-relaxed text-slate-100">
-                              {document.analysisResult ? 
-                                JSON.stringify(document.analysisResult, null, 2) : 
+                              {document.analysisResult ?
+                                JSON.stringify(document.analysisResult, null, 2) :
                                 'No analysis results available'
                               }
                             </pre>

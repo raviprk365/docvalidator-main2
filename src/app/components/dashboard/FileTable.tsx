@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { AlertCircle, CheckCircle, Clock, ExternalLink, Eye, FileText, RefreshCw, XCircle } from 'lucide-react'
+import { AlertCircle, CheckCircle, Clock, Eye, FileText, RefreshCw, XCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { DocumentModal } from './DocumentModal'
 import { DocumentViewer } from './DocumentViewer'
@@ -145,7 +145,7 @@ export function FileTable({ folder, refreshTrigger, onRefresh, startPolling }: F
   // Load files only once when component mounts
   useEffect(() => {
     fetchFiles()
-    
+
     // Cleanup polling on unmount
     return () => {
       stopPolling()
@@ -166,7 +166,7 @@ export function FileTable({ folder, refreshTrigger, onRefresh, startPolling }: F
   useEffect(() => {
     if (startPolling) {
       const hasProcessingFiles = files.some(file => file.status === 'processing' || file.status === 'pending')
-      
+
       if (hasProcessingFiles && !isPolling) {
         startPollingInternal()
       } else if (!hasProcessingFiles && isPolling) {
@@ -184,35 +184,35 @@ export function FileTable({ folder, refreshTrigger, onRefresh, startPolling }: F
         setLoading(true)
         setError(null)
       }
-      
+
       if (!folder) {
         setError('Application folder is required')
         setLoading(false)
         return
       }
-      
+
       const url = `/api/get-files?folder=${encodeURIComponent(folder)}`
       const response = await fetch(url)
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch files')
       }
-      
+
       const data = await response.json()
       const newFiles = data.files || []
-      
+
       // Check if any file status has changed (for background refresh)
       if (isBackgroundRefresh && files.length > 0) {
         const hasStatusChanges = newFiles.some((newFile: FileData) => {
           const oldFile = files.find(f => f.id === newFile.id)
           return oldFile && oldFile.status !== newFile.status
         })
-        
+
         if (hasStatusChanges) {
           console.log('File status changes detected, refreshing...')
         }
       }
-      
+
       setFiles(newFiles)
     } catch (err) {
       console.error('Error fetching files:', err)
@@ -230,35 +230,35 @@ export function FileTable({ folder, refreshTrigger, onRefresh, startPolling }: F
 
   const startPollingInternal = () => {
     if (refreshInterval) return // Prevent multiple intervals
-    
+
     setIsPolling(true)
     const interval = setInterval(async () => {
       try {
         if (!folder) return
-        
+
         const url = `/api/get-files?folder=${encodeURIComponent(folder)}`
         const response = await fetch(url)
         if (response.ok) {
           const data = await response.json()
           const newFiles = data.files || []
-          
+
           // Check if any files have changed (status, new files, etc.)
-          const hasChanges = 
-            newFiles.length !== files.length || 
+          const hasChanges =
+            newFiles.length !== files.length ||
             newFiles.some((newFile: FileData) => {
               const currentFile = files.find(f => f.id === newFile.id)
               return !currentFile || currentFile.status !== newFile.status
             })
-          
+
           if (hasChanges) {
             console.log('File changes detected, updating files...')
             setFiles(newFiles)
-            
+
             // Check if all files are now analyzed/completed and stop polling
-            const hasProcessingFiles = newFiles.some((file: FileData) => 
+            const hasProcessingFiles = newFiles.some((file: FileData) =>
               file.status === 'processing' || file.status === 'pending'
             )
-            
+
             if (!hasProcessingFiles) {
               console.log('All files analyzed, stopping polling...')
               setTimeout(() => {
@@ -275,7 +275,7 @@ export function FileTable({ folder, refreshTrigger, onRefresh, startPolling }: F
         console.error('Polling error:', error)
       }
     }, 3000) // Poll every 3 seconds for faster updates
-    
+
     setRefreshInterval(interval)
   }
 
@@ -428,237 +428,236 @@ export function FileTable({ folder, refreshTrigger, onRefresh, startPolling }: F
               </TableHeader>
               <TableBody>
                 {files.map((file) => (
-                <TableRow key={file.id} className="animate-fade-in">
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      {getStatusIcon(file.status)}
-                      <span className="font-medium">{file.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium">
-                        {file.analysisResult?.documentType || file.metadata?.documenttype || 'Unknown'}
-                      </span>
-                      {typeof file.analysisResult?.confidence === 'number' && (
-                        <span className="text-xs text-muted-foreground">
-                          
+                  <TableRow key={file.id} className="animate-fade-in">
+                    <TableCell>
+                      <div className="flex items-center space-x-3">
+                        {getStatusIcon(file.status)}
+                        <span className="font-medium">{file.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium">
+                          {file.analysisResult?.documentType || file.metadata?.documenttype || 'Unknown'}
                         </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(file.status)}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(file.uploadDate).toLocaleDateString()} {new Date(file.uploadDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end space-x-2">
-                      {/* Modal View Button */}
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleOpenModalWithSAS(file)}
-                      >
-                        <Eye className="w-4 h-4 mr-1" />
-                        View
-                      </Button>
+                        {typeof file.analysisResult?.confidence === 'number' && (
+                          <span className="text-xs text-muted-foreground">
 
-                      {/* View Document Page Button */}
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => window.open(`/dashboard/documents/${file.id}`, '_blank')}
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </Button>
-                      
-                      {/* Quick Preview Button */}
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleViewDocumentWithSAS(file)}
-                      >
-                        <FileText className="w-4 h-4" />
-                      </Button>
-                      
-                      {/* Analysis Results Button */}
-                      {file.analysisResult && (
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="!max-w-[95vw] w-[95vw] max-h-[90vh] flex flex-col p-0">
-                            <DialogHeader className="flex-shrink-0 px-6 py-4 border-b bg-white">
-                              <DialogTitle className="text-xl font-semibold">Analysis Results</DialogTitle>
-                              <DialogDescription className="text-sm text-muted-foreground mt-1">
-                                Detailed validation results for {file.name}
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="flex-1 overflow-hidden">
-                              <ScrollArea className="h-full">
-                                <div className="p-6 space-y-6">
-                                  <div className="bg-white border border-gray-200 rounded-lg p-5">
-                                    <div className="flex items-center mb-4">
-                                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                                      <h4 className="text-lg font-semibold text-gray-900">Document Information</h4>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      <div className="space-y-1">
-                                        <label className="text-sm font-medium text-gray-600">Document Type</label>
-                                        <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
-                                          <span className="text-sm font-medium text-gray-900">{file.analysisResult.documentType || 'Unknown'}</span>
-                                        </div>
-                                      </div>
-                                      <div className="space-y-1">
-                                        <label className="text-sm font-medium text-gray-600">Confidence Level</label>
-                                        <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
-                                          <span className="text-sm font-medium text-gray-900">
-                                            {file.analysisResult.confidence ? 
-                                              `${(file.analysisResult.confidence * 100).toFixed(1)}%` : 
-                                              'N/A'}
-                                          </span>
-                                        </div>
-                                      </div>
-                                      <div className="space-y-1">
-                                        <label className="text-sm font-medium text-gray-600">Processing Status</label>
-                                        <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
-                                          <span className="text-sm font-medium text-gray-900">{file.analysisResult.status || 'Unknown'}</span>
-                                        </div>
-                                      </div>
-                                      <div className="space-y-1">
-                                        <label className="text-sm font-medium text-gray-600">Processed Date</label>
-                                        <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
-                                          <span className="text-sm font-medium text-gray-900">
-                                            {file.analysisResult.processedAt ? 
-                                              new Date(file.analysisResult.processedAt).toLocaleString() : 
-                                              'N/A'}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(file.status)}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {new Date(file.uploadDate).toLocaleDateString()} {new Date(file.uploadDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end space-x-2">
+                        {/* Modal View Button */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenModalWithSAS(file)}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          View
+                        </Button>
 
-                                  {file.analysisResult.extractedData?.keyValuePairs && file.analysisResult.extractedData.keyValuePairs.length > 0 && (
+                        {/* View Document Page Button */}
+                        {/* <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(`/dashboard/documents/${file.id}`, '_blank')}
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </Button> */}
+
+                        {/* Quick Preview Button */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewDocumentWithSAS(file)}
+                        >
+                          <FileText className="w-4 h-4" />
+                        </Button>
+
+                        {/* Analysis Results Button */}
+                        {file.analysisResult && (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="!max-w-[95vw] w-[95vw] max-h-[90vh] flex flex-col p-0">
+                              <DialogHeader className="flex-shrink-0 px-6 py-4 border-b bg-white">
+                                <DialogTitle className="text-xl font-semibold">Analysis Results</DialogTitle>
+                                <DialogDescription className="text-sm text-muted-foreground mt-1">
+                                  Detailed validation results for {file.name}
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="flex-1 overflow-y-auto">
+                                <ScrollArea className="h-full">
+                                  <div className="p-6 space-y-6">
                                     <div className="bg-white border border-gray-200 rounded-lg p-5">
-                                      <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center">
-                                          <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                                          <h4 className="text-lg font-semibold text-gray-900">Extracted Information</h4>
-                                        </div>
-                                        <Badge variant="outline" className="text-xs px-2 py-1">
-                                          {file.analysisResult.extractedData.keyValuePairs.length} fields
-                                        </Badge>
+                                      <div className="flex items-center mb-4">
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
+                                        <h4 className="text-lg font-semibold text-gray-900">Document Information</h4>
                                       </div>
-                                      <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                                        {file.analysisResult.extractedData.keyValuePairs.map((pair: { key: string; value: string; confidence: number }, index: number) => (
-                                          <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                                            <div className="space-y-2">
-                                              <div className="flex justify-between items-start">
-                                                <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                                                  {pair.key}
-                                                </label>
-                                                <Badge 
-                                                  variant="outline" 
-                                                  className={`text-xs px-1.5 py-0.5 ${
-                                                    pair.confidence >= 0.9 
-                                                      ? 'bg-green-50 text-green-700 border-green-200' 
-                                                      : pair.confidence >= 0.7 
-                                                      ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                                                      : 'bg-red-50 text-red-700 border-red-200'
-                                                  }`}
-                                                >
-                                                  {Math.round(pair.confidence * 100)}%
-                                                </Badge>
-                                              </div>
-                                              <div className="bg-white border border-gray-200 rounded-md p-2">
-                                                <div className="text-sm font-medium text-gray-900 break-all">
-                                                  {pair.value || 'No value detected'}
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                          <label className="text-sm font-medium text-gray-600">Document Type</label>
+                                          <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                                            <span className="text-sm font-medium text-gray-900">{file.analysisResult.documentType || 'Unknown'}</span>
+                                          </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                          <label className="text-sm font-medium text-gray-600">Confidence Level</label>
+                                          <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                                            <span className="text-sm font-medium text-gray-900">
+                                              {file.analysisResult.confidence ?
+                                                `${(file.analysisResult.confidence * 100).toFixed(1)}%` :
+                                                'N/A'}
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                          <label className="text-sm font-medium text-gray-600">Processing Status</label>
+                                          <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                                            <span className="text-sm font-medium text-gray-900">{file.analysisResult.status || 'Unknown'}</span>
+                                          </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                          <label className="text-sm font-medium text-gray-600">Processed Date</label>
+                                          <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                                            <span className="text-sm font-medium text-gray-900">
+                                              {file.analysisResult.processedAt ?
+                                                new Date(file.analysisResult.processedAt).toLocaleString() :
+                                                'N/A'}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {file.analysisResult.extractedData?.keyValuePairs && file.analysisResult.extractedData.keyValuePairs.length > 0 && (
+                                      <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                        <div className="flex items-center justify-between mb-4">
+                                          <div className="flex items-center">
+                                            <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+                                            <h4 className="text-lg font-semibold text-gray-900">Extracted Information</h4>
+                                          </div>
+                                          <Badge variant="outline" className="text-xs px-2 py-1">
+                                            {file.analysisResult.extractedData.keyValuePairs.length} fields
+                                          </Badge>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 max-h-64 overflow-y-auto pr-2">
+                                          {file.analysisResult.extractedData.keyValuePairs.map((pair: { key: string; value: string; confidence: number }, index: number) => (
+                                            <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                              <div className="space-y-2">
+                                                <div className="flex justify-between items-start">
+                                                  <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                                    {pair.key}
+                                                  </label>
+                                                  <Badge
+                                                    variant="outline"
+                                                    className={`text-xs px-1.5 py-0.5 ${pair.confidence >= 0.9
+                                                      ? 'bg-green-50 text-green-700 border-green-200'
+                                                      : pair.confidence >= 0.7
+                                                        ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                                                        : 'bg-red-50 text-red-700 border-red-200'
+                                                      }`}
+                                                  >
+                                                    {Math.round(pair.confidence * 100)}%
+                                                  </Badge>
+                                                </div>
+                                                <div className="bg-white border border-gray-200 rounded-md p-2">
+                                                  <div className="text-sm font-medium text-gray-900 break-all">
+                                                    {pair.value || 'No value detected'}
+                                                  </div>
                                                 </div>
                                               </div>
                                             </div>
-                                          </div>
-                                        ))}
+                                          ))}
+                                        </div>
                                       </div>
-                                    </div>
-                                  )}
+                                    )}
 
-                                  {file.analysisResult.extractedData?.tables && file.analysisResult.extractedData.tables.length > 0 && (
-                                    <div className="bg-white border border-gray-200 rounded-lg p-5">
-                                      <div className="flex items-center mb-4">
-                                        <div className="w-2 h-2 bg-orange-500 rounded-full mr-3"></div>
-                                        <h4 className="text-lg font-semibold text-gray-900">Extracted Tables</h4>
-                                        <Badge variant="outline" className="text-xs px-2 py-1 ml-auto">
-                                          {file.analysisResult.extractedData.tables.length} table(s)
-                                        </Badge>
-                                      </div>
-                                      <div className="space-y-3">
-                                        {file.analysisResult.extractedData.tables.map((table: { rowCount: number; columnCount: number }, index: number) => (
-                                          <div key={index} className="bg-gray-50 border border-gray-200 rounded-md p-3">
-                                            <div className="text-sm font-medium text-gray-900">
-                                              Table {index + 1}: {table.rowCount} rows × {table.columnCount} columns
+                                    {file.analysisResult.extractedData?.tables && file.analysisResult.extractedData.tables.length > 0 && (
+                                      <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                        <div className="flex items-center mb-4">
+                                          <div className="w-2 h-2 bg-orange-500 rounded-full mr-3"></div>
+                                          <h4 className="text-lg font-semibold text-gray-900">Extracted Tables</h4>
+                                          <Badge variant="outline" className="text-xs px-2 py-1 ml-auto">
+                                            {file.analysisResult.extractedData.tables.length} table(s)
+                                          </Badge>
+                                        </div>
+                                        <div className="space-y-3">
+                                          {file.analysisResult.extractedData.tables.map((table: { rowCount: number; columnCount: number }, index: number) => (
+                                            <div key={index} className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                                              <div className="text-sm font-medium text-gray-900">
+                                                Table {index + 1}: {table.rowCount} rows × {table.columnCount} columns
+                                              </div>
                                             </div>
-                                          </div>
-                                        ))}
+                                          ))}
+                                        </div>
                                       </div>
-                                    </div>
-                                  )}
+                                    )}
 
-                                  {file.analysisResult.extractedData?.text && (
-                                    <div className="bg-white border border-gray-200 rounded-lg p-5">
-                                      <div className="flex items-center mb-4">
-                                        <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
-                                        <h4 className="text-lg font-semibold text-gray-900">Extracted Text Preview</h4>
+                                    {file.analysisResult.extractedData?.text && (
+                                      <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                        <div className="flex items-center mb-4">
+                                          <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
+                                          <h4 className="text-lg font-semibold text-gray-900">Extracted Text Preview</h4>
+                                        </div>
+                                        <div className="bg-gray-50 border border-gray-200 rounded-md p-3 max-h-40 overflow-y-auto">
+                                          <div className="text-sm text-gray-900 whitespace-pre-wrap font-mono">
+                                            {file.analysisResult.extractedData.text.substring(0, 500)}
+                                            {file.analysisResult.extractedData.text.length > 500 && '...'}
+                                          </div>
+                                        </div>
                                       </div>
-                                      <div className="bg-gray-50 border border-gray-200 rounded-md p-3 max-h-40 overflow-y-auto">
-                                        <div className="text-sm text-gray-900 whitespace-pre-wrap font-mono">
-                                          {file.analysisResult.extractedData.text.substring(0, 500)}
-                                          {file.analysisResult.extractedData.text.length > 500 && '...'}
+                                    )}
+
+                                    {file.analysisResult.error && (
+                                      <div className="bg-red-50 border border-red-200 rounded-lg p-5">
+                                        <div className="flex items-center mb-4">
+                                          <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
+                                          <h4 className="text-lg font-semibold text-red-900">Processing Error</h4>
+                                        </div>
+                                        <div className="bg-white border border-red-200 rounded-md p-3">
+                                          <p className="text-sm text-red-700">{file.analysisResult.error}</p>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    <div className="bg-white border border-gray-200 rounded-lg p-5">
+                                      <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center">
+                                          <div className="w-2 h-2 bg-gray-500 rounded-full mr-3"></div>
+                                          <h4 className="text-lg font-semibold text-gray-900">Raw Analysis Data</h4>
+                                        </div>
+                                        <Badge variant="outline" className="text-xs">JSON</Badge>
+                                      </div>
+                                      <div className="bg-slate-950 text-slate-100 rounded-lg border border-slate-200 overflow-y-auto">
+                                        <div className="bg-slate-900 px-3 py-2 border-b border-slate-700">
+                                          <span className="text-xs text-slate-300 font-medium">Analysis Response</span>
+                                        </div>
+                                        <div className="p-3 max-h-60 overflow-auto">
+                                          <pre className="text-xs whitespace-pre-wrap break-words font-mono leading-relaxed text-slate-100">
+                                            {JSON.stringify(file.analysisResult, null, 2)}
+                                          </pre>
                                         </div>
                                       </div>
                                     </div>
-                                  )}
-                                  
-                                  {file.analysisResult.error && (
-                                    <div className="bg-red-50 border border-red-200 rounded-lg p-5">
-                                      <div className="flex items-center mb-4">
-                                        <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
-                                        <h4 className="text-lg font-semibold text-red-900">Processing Error</h4>
-                                      </div>
-                                      <div className="bg-white border border-red-200 rounded-md p-3">
-                                        <p className="text-sm text-red-700">{file.analysisResult.error}</p>
-                                      </div>
-                                    </div>
-                                  )}
-                                  
-                                  <div className="bg-white border border-gray-200 rounded-lg p-5">
-                                    <div className="flex items-center justify-between mb-4">
-                                      <div className="flex items-center">
-                                        <div className="w-2 h-2 bg-gray-500 rounded-full mr-3"></div>
-                                        <h4 className="text-lg font-semibold text-gray-900">Raw Analysis Data</h4>
-                                      </div>
-                                      <Badge variant="outline" className="text-xs">JSON</Badge>
-                                    </div>
-                                    <div className="bg-slate-950 text-slate-100 rounded-lg border border-slate-200 overflow-hidden">
-                                      <div className="bg-slate-900 px-3 py-2 border-b border-slate-700">
-                                        <span className="text-xs text-slate-300 font-medium">Analysis Response</span>
-                                      </div>
-                                      <div className="p-3 max-h-60 overflow-auto">
-                                        <pre className="text-xs whitespace-pre-wrap break-words font-mono leading-relaxed text-slate-100">
-                                          {JSON.stringify(file.analysisResult, null, 2)}
-                                        </pre>
-                                      </div>
-                                    </div>
                                   </div>
-                                </div>
-                              </ScrollArea>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      )}
-                      
-                      {/* <Button
+                                </ScrollArea>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        )}
+
+                        {/* <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleDownload(file.id)}
@@ -674,15 +673,15 @@ export function FileTable({ folder, refreshTrigger, onRefresh, startPolling }: F
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button> */}
-                    </div>
-                  </TableCell>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
         )}
-        
+
         {!loading && !error && files.length === 0 && (
           <div className="text-center py-12">
             <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
@@ -691,7 +690,7 @@ export function FileTable({ folder, refreshTrigger, onRefresh, startPolling }: F
           </div>
         )}
       </CardContent>
-      
+
       {/* Document Viewer */}
       {selectedFile && (
         <DocumentViewer
