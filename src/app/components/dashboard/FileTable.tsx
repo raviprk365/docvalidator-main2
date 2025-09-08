@@ -1,16 +1,6 @@
-import { useState, useEffect } from 'react'
-import { FileText, Eye, CheckCircle, XCircle, Clock, AlertCircle, ExternalLink, RefreshCw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -20,8 +10,18 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { DocumentViewer } from './DocumentViewer'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { AlertCircle, CheckCircle, Clock, ExternalLink, Eye, FileText, RefreshCw, XCircle } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { DocumentModal } from './DocumentModal'
+import { DocumentViewer } from './DocumentViewer'
 
 interface FileData {
   id: string
@@ -442,7 +442,7 @@ export function FileTable({ folder, refreshTrigger, onRefresh, startPolling }: F
                       </span>
                       {typeof file.analysisResult?.confidence === 'number' && (
                         <span className="text-xs text-muted-foreground">
-                          {(file.analysisResult.confidence * 100).toFixed(1)}% confidence
+                          
                         </span>
                       )}
                     </div>
