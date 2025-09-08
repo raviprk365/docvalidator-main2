@@ -1,4 +1,5 @@
 'use client'
+import { useAuthStore } from '../../store/authStore'
 
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -68,8 +69,11 @@ export function PageNavigation() {
 
   const [menuOpen, setMenuOpen] = useState(false)
 
-  const isLogin = typeof window !== 'undefined' ? require('../../store/authStore').useAuthStore.getState().isLogin : false;
-  const logout = typeof window !== 'undefined' ? require('../../store/authStore').useAuthStore.getState().logout : () => { };
+  // Use Zustand hook to access isLogin and logout
+  // Import useAuthStore at the top of the file: import { useAuthStore } from '../../store/authStore';
+  // (Assume import is present or will be added if missing)
+  const isLogin = useAuthStore((state: any) => state.isLogin);
+  const logout = useAuthStore((state: any) => state.logout);
 
   return (
     <div className="flex items-center space-x-1">
