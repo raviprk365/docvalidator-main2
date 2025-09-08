@@ -68,8 +68,9 @@ export function PageNavigation() {
 
   const [menuOpen, setMenuOpen] = useState(false)
 
- const isLogin = useAuthStore((state: any) => state.isLogin);
-  const logout = useAuthStore((state: any) => state.logout);
+ const isLogin = useAuthStore((state) => state.isLogin);
+  const logout = useAuthStore((state) => state.logout);
+
 
   return (
     <div className="flex items-center space-x-1">
