@@ -1,6 +1,3 @@
-import { useState } from 'react'
-import Image from 'next/image'
-import { X, Download, ZoomIn, ZoomOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -8,6 +5,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Download, ZoomIn, ZoomOut } from 'lucide-react'
+import Image from 'next/image'
+import { useState } from 'react'
 
 interface DocumentViewerProps {
   isOpen: boolean
@@ -41,8 +41,8 @@ export function DocumentViewer({ isOpen, onClose, fileUrl, fileName }: DocumentV
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] w-[95vw] flex flex-col">
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+      <DialogContent className="min-w-[75vw] max-w-[95vw] max-h-[95vh] w-[95vw] flex flex-col">
+        <DialogHeader className="flex flex-row items-center justify-between space-y-0 mr-8 pb-4">
           <DialogTitle className="text-lg font-semibold truncate mr-4">
             {fileName}
           </DialogTitle>
@@ -72,12 +72,12 @@ export function DocumentViewer({ isOpen, onClose, fileUrl, fileName }: DocumentV
               <Download className="w-4 h-4 mr-1" />
               Download
             </Button>
-            <Button variant="ghost" size="sm" onClick={onClose}>
+            {/* <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="w-4 h-4" />
-            </Button>
+            </Button> */}
           </div>
         </DialogHeader>
-        
+
         <div className="flex-1 overflow-auto bg-gray-50 rounded-lg p-4">
           <div className="flex items-center justify-center min-h-full">
             {isPdf ? (
