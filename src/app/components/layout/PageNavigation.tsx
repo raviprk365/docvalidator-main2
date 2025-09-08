@@ -69,11 +69,9 @@ export function PageNavigation() {
 
   const [menuOpen, setMenuOpen] = useState(false)
 
-  // Use Zustand hook to access isLogin and logout
-  // Import useAuthStore at the top of the file: import { useAuthStore } from '../../store/authStore';
-  // (Assume import is present or will be added if missing)
-  const isLogin = useAuthStore((state: any) => state.isLogin);
-  const logout = useAuthStore((state: any) => state.logout);
+  const isLogin = useAuthStore((state) => state.isLogin);
+  const logout = useAuthStore((state) => state.logout);
+
 
   return (
     <div className="flex items-center space-x-1">
