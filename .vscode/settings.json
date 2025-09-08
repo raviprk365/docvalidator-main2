@@ -35,5 +35,11 @@
   "debug.openDebug": "openOnSessionStart",
   "javascript.preferences.importModuleSpecifier": "relative",
   "javascript.suggest.autoImports": true,
-  "javascript.updateImportsOnFileMove.enabled": "always"
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "appService.zipIgnorePattern": [
+    "node_modules{,/**}",
+    ".vscode{,/**}"
+  ],
+  "appService.defaultWebAppToDeploy": "/subscriptions/a7b9310a-3cdb-4e49-a87e-c9d40f6c514c/resourceGroups/docvalidator-rg/providers/Microsoft.Web/sites/docvalidator-app",
+  "appService.deploySubpath": "."
 }
