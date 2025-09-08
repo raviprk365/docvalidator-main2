@@ -275,8 +275,8 @@ export class AzureContentUnderstandingClient {
     const keyValuePairs = document?.fields
       ? Object.entries(document.fields).map(([key, value]: [string, unknown]) => ({
           key,
-          value: typeof value === 'object' ? (value.valueString || value.content || JSON.stringify(value)) : String(value),
-          confidence: typeof value === 'object' ? value.confidence || 0 : 1,
+          value: typeof value === 'object' && value ? String((value as Record<string, unknown>).valueString || (value as Record<string, unknown>).content || JSON.stringify(value)) : String(value || ''),
+          confidence: typeof value === 'object' && value ? (value as Record<string, unknown>).confidence as number || 0 : 1,
         }))
       : [];
 
@@ -298,7 +298,7 @@ export class AzureContentUnderstandingClient {
     return {
       id: operationId,
       status: 'completed',
-      documentType,
+      documentType: typeof documentType === 'string' ? documentType : 'Unknown',
       confidence: document?.confidence || 0,
       extractedData: {
         text: result.content || '',

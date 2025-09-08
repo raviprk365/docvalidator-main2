@@ -409,9 +409,9 @@ export function UploadArea({ folder, onUploadComplete, onUploadStart }: UploadAr
                           {fileItem.analysisResult.confidence && 
                             ` (${Math.round(fileItem.analysisResult.confidence * 100)}% confidence)`}
                         </p>
-                        {fileItem.analysisResult.extractedData?.keyValuePairs?.length > 0 && (
+                        {fileItem.analysisResult.extractedData?.keyValuePairs && fileItem.analysisResult.extractedData.keyValuePairs.length > 0 && (
                           <p className="text-muted-foreground">
-                            Extracted {fileItem.analysisResult.extractedData.keyValuePairs.length} key-value pairs
+                            Extracted {fileItem.analysisResult.extractedData.keyValuePairs?.length} key-value pairs
                           </p>
                         )}
                       </div>
