@@ -68,8 +68,8 @@ export function PageNavigation() {
 
   const [menuOpen, setMenuOpen] = useState(false)
 
-  const isLogin = typeof window !== 'undefined' ? require('../../store/authStore').useAuthStore.getState().isLogin : false;
-  const logout = typeof window !== 'undefined' ? require('../../store/authStore').useAuthStore.getState().logout : () => { };
+ const isLogin = useAuthStore((state: any) => state.isLogin);
+  const logout = useAuthStore((state: any) => state.logout);
 
   return (
     <div className="flex items-center space-x-1">
