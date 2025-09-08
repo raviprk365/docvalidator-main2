@@ -6,11 +6,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_and_deploy: # Renamed job for clarity
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
 
     steps:
       - uses: actions/checkout@v4
@@ -24,9 +23,46 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Next.js
+      - name: Build (Next.js standalone)
         run: npm run build
-        # The Oryx build system on Azure will automatically use this build when deploying.
+        # requires next.config.js with: output: 'standalone'
+
+      - name: Prepare deploy package (include dotfiles)
+        run: |
+          rm -rf package
+          mkdir -p package
+          # Copy EVERYTHING from .next/standalone (including the hidden `.next` directory)
+          rsync -a .next/standalone/ package/
+          # Copy static assets used by Next
+          mkdir -p package/.next/static
+          rsync -a .next/static/ package/.next/static/
+          # Public assets (if any)
+          if [ -d public ]; then rsync -a public/ package/public/; fi
+          # IMPORTANT: do NOT copy your root package.json here;
+          # the standalone bundle already includes what it needs.
+          # Azure will run `node server.js` because you set the Startup Command.
+
+      - name: Create zip artifact
+        run: (cd package && zip -r ../app.zip .)
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-zip
+          path: app.zip
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-zip
 
       - name: Azure login (OIDC)
         uses: azure/login@v2
@@ -40,4 +76,4 @@ jobs:
         with:
           app-name: docvalidator-app
           slot-name: Production
-          # By default, this action zips and deploys the entire repository root.
+          package: app.zip
