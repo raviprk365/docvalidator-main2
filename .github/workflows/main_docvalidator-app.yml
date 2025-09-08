@@ -25,17 +25,20 @@ jobs:
 
       - name: Build (Next.js standalone)
         run: npm run build
-        # Requires next.config.js in repo and package.json start script uses PORT
+        # Requires next.config.js with: output: 'standalone'
 
-      - name: Prepare deploy package (standalone output)
+      - name: Prepare deploy package (use standalone package.json)
         run: |
           rm -rf package
           mkdir -p package
+          # Copy the standalone server, INCLUDING its own package.json (with "start": "node server.js")
           cp -r .next/standalone/* package/
+          # Static assets
           mkdir -p package/.next/static
           cp -r .next/static package/.next/static
+          # Public assets (if any)
           if [ -d public ]; then cp -r public package/public; fi
-          cp package.json package/package.json
+          # IMPORTANT: do NOT overwrite package/package.json with the root one
 
       - name: Create zip artifact
         run: (cd package && zip -r ../app.zip .)
