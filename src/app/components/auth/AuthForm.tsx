@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Eye, EyeOff, FileText, Lock, Mail } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { useAuthStore } from '../../store/authStore'
 import { useToast } from '../ui/use-toast'
 
 export function AuthForm() {
@@ -15,6 +16,8 @@ export function AuthForm() {
   const [password, setPassword] = useState('')
   const { toast } = useToast()
   const router = useRouter()
+
+  const setLogin = useAuthStore((state) => state.login)
 
   const handleSubmit = async (type: 'signin' | 'signup', e: React.FormEvent) => {
     e.preventDefault()
@@ -29,14 +32,16 @@ export function AuthForm() {
         created_at: new Date().toISOString()
       }
       localStorage.setItem('dummy-user', JSON.stringify(dummyUser))
-      
+
+      setLogin() // Set isLogin to true in zustand
+
       toast({
         title: type === 'signup' ? "Account created" : "Signed in successfully",
-        description: type === 'signup' 
-          ? "Welcome to EAI Document Intelligence!" 
+        description: type === 'signup'
+          ? "Welcome to EAI Document Intelligence!"
           : "Welcome back to EAI Document Intelligence."
       })
-      
+
       setIsLoading(false)
       router.push('/dashboard')
     }, 1000)
@@ -85,7 +90,7 @@ export function AuthForm() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="signin-password">Password</Label>
                     <div className="relative">
@@ -132,7 +137,7 @@ export function AuthForm() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
                     <div className="relative">

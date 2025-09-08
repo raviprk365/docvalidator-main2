@@ -1,9 +1,10 @@
 'use client'
 
-import { useRouter, usePathname } from 'next/navigation'
-import { useState, useEffect } from 'react'
-import { ChevronLeft, ChevronRight, FolderOpen, BarChart3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { BarChart3, ChevronLeft, ChevronRight, FolderOpen } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 export function PageNavigation() {
   const router = useRouter()
@@ -65,16 +66,21 @@ export function PageNavigation() {
     router.push('/analysis')
   }
 
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  const isLogin = typeof window !== 'undefined' ? require('../../store/authStore').useAuthStore.getState().isLogin : false;
+  const logout = typeof window !== 'undefined' ? require('../../store/authStore').useAuthStore.getState().logout : () => { };
+
   return (
     <div className="flex items-center space-x-1">
-      {/* Back/Forward buttons */}
+      {/* Back/Forward buttons for medium and up */}
       <div className="flex items-center space-x-1 mr-2">
         <Button
           variant="outline"
           size="sm"
           onClick={handleBack}
           disabled={!canGoBack}
-          className="p-2 h-8 w-8"
+          className="hidden p-2 h-8 w-8 md:inline"
           title="Go back"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -84,15 +90,15 @@ export function PageNavigation() {
           size="sm"
           onClick={handleForward}
           disabled={!canGoForward}
-          className="p-2 h-8 w-8"
+          className="hidden p-2 h-8 w-8 md:inline"
           title="Go forward"
         >
           <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
 
-      {/* Quick navigation buttons */}
-      <div className="flex items-center space-x-1">
+      {/* Quick navigation buttons for medium and up */}
+      <div className="hidden md:flex items-center space-x-1">
         <Button
           variant={pathname === '/folders' ? 'default' : 'outline'}
           size="sm"
@@ -101,7 +107,7 @@ export function PageNavigation() {
           title="Applications"
         >
           <FolderOpen className="w-4 h-4 mr-1" />
-          <span className="hidden sm:inline">Applications</span>
+          <span className="hidden md:inline">Applications</span>
         </Button>
         <Button
           variant={pathname === '/analysis' ? 'default' : 'outline'}
@@ -111,8 +117,40 @@ export function PageNavigation() {
           title="Analysis"
         >
           <BarChart3 className="w-4 h-4 mr-1" />
-          <span className="hidden sm:inline">Analysis</span>
+          <span className="hidden md:inline">Analysis</span>
         </Button>
+      </div>
+
+      {/* Shadcn DropdownMenu for small and medium devices, positioned at right */}
+      <div className="md:hidden fixed top-4 right-4 z-50">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="p-2 h-8"
+              title="Menu"
+            >
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem onClick={handleApplications} className="flex items-center gap-2">
+              <FolderOpen className="w-4 h-4" />
+              <span>Applications</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleAnalysis} className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              <span>Analysis</span>
+            </DropdownMenuItem>
+            {isLogin && (
+              <DropdownMenuItem onClick={logout} className="flex items-center gap-2 mt-2">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" /></svg>
+                <span>Logout</span>
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   )

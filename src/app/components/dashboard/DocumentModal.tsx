@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { CheckCircle, Eye, X } from 'lucide-react'
+import { CheckCircle, Eye } from 'lucide-react'
 import Image from 'next/image'
 import { useState } from 'react'
 
@@ -261,7 +261,7 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="!max-w-[95vw] max-h-[95vh] w-[95vw] xl:!max-w-[95vw] xl:w-[95vw] 2xl:!max-w-[95vw] 2xl:w-[95vw] flex flex-col p-0">
         {/* Header */}
-        <DialogHeader className="flex-1 flex flex-row items-center justify-between p-6 pb-4 space-y-0">
+        <DialogHeader className="flex-1 flex flex-row items-center justify-between p-6 pb-4 space-y-0 mr-8">
           <div className="flex items-center space-x-4">
             <DialogTitle className="text-xl font-semibold">
               {documentType}
@@ -286,9 +286,9 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
                 Mark for RFI
               </label>
             </div>
-            <Button variant="ghost" size="sm" onClick={onClose}>
+            {/* <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="w-5 h-5" />
-            </Button>
+            </Button> */}
           </div>
         </DialogHeader>
 

@@ -1,7 +1,6 @@
 'use client'
-import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Header } from '../components/layout/Header'
+import { useEffect, useState } from 'react'
 import { FolderGrid } from '../components/landing/FolderGrid'
 
 type DummyUser = {
@@ -43,7 +42,7 @@ const ApplicationsPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      {/* <Header /> */}
       <FolderGrid />
     </div>
   )

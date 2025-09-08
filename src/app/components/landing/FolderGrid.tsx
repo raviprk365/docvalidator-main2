@@ -1,9 +1,9 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Folder, FileText, Calendar, Eye } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Calendar, Eye, FileText, Folder } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { CreateFolderModal } from './CreateFolderModal'
 
 interface BlobFolder {
@@ -32,12 +32,12 @@ export function FolderGrid() {
     try {
       setLoading(true)
       setError(null)
-      
+
       const response = await fetch('/api/get-blob-folders')
       if (!response.ok) {
         throw new Error('Failed to fetch folders')
       }
-      
+
       const data = await response.json()
       setFolders(data.folders || [])
       setHasFetched(true)
@@ -66,7 +66,7 @@ export function FolderGrid() {
       totalSize: '0 Bytes',
       lastModified: new Date().toISOString(),
     }
-    
+
     setFolders(prev => {
       // Check if folder already exists to avoid duplicates
       if (prev.some(folder => folder.name === folderName)) {
@@ -116,7 +116,7 @@ export function FolderGrid() {
     <div className="container mx-auto px-4 py-8 space-y-8">
       {/* Header */}
       <div className="animate-fade-in">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col items-start md:flex-row md:items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-semibold mb-2">Applications</h1>
             <p className="text-muted-foreground">
@@ -130,8 +130,8 @@ export function FolderGrid() {
       {/* Folders Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-slide-up">
         {folders.map((folder, index) => (
-          <Card 
-            key={folder.name} 
+          <Card
+            key={folder.name}
             className="card-minimal hover:shadow-md transition-shadow cursor-pointer"
             style={{ animationDelay: `${index * 100}ms` }}
           >
@@ -145,7 +145,7 @@ export function FolderGrid() {
                 </div>
               </div>
             </CardHeader>
-            
+
             <CardContent className="space-y-3">
               {/* Stats */}
               <div className="space-y-2">
@@ -156,7 +156,7 @@ export function FolderGrid() {
                   </div>
                   <span className="font-medium">{folder.fileCount}</span>
                 </div>
-                
+
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center space-x-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -164,7 +164,7 @@ export function FolderGrid() {
                   </div>
                   <span className="font-medium">{folder.totalSize}</span>
                 </div>
-                
+
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Last modified:</span>
                   <span className="font-medium">{formatDate(folder.lastModified)}</span>
@@ -172,7 +172,7 @@ export function FolderGrid() {
               </div>
 
               {/* View Button */}
-              <Button 
+              <Button
                 onClick={() => handleViewFolder(folder.name)}
                 className="w-full"
                 variant="outline"

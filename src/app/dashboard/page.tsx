@@ -1,7 +1,6 @@
 'use client'
-import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Header } from '../components/layout/Header'
+import { Suspense, useEffect, useState } from 'react'
 import { Dashboard as DashboardComponent } from '../components/dashboard/Dashboard'
 type DummyUser = {
   id: string
@@ -25,13 +24,13 @@ const DashboardContent = () => {
     } else {
       setUser(JSON.parse(dummyUserData))
     }
-    
+
     // If no folder parameter, redirect to applications page
     if (!folder) {
       navigate.push('/folders')
       return
     }
-    
+
     setLoading(false)
   }, [navigate, folder])
 
@@ -52,7 +51,7 @@ const DashboardContent = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      {/* <Header /> */}
       <DashboardComponent folder={folder || undefined} />
     </div>
   )

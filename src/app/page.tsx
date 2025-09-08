@@ -1,9 +1,9 @@
 'use client'
-import { Button } from './components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card'
 import { CheckCircle, FileText, Shield, Zap } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { Button } from './components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card'
 import { supabase, type User } from './lib/supabase'
 
 const Index = () => {
@@ -55,7 +55,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted">
       {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm">
+      {/* <header className="border-b border-border bg-card/50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
@@ -70,27 +70,27 @@ const Index = () => {
             Get Started
           </Button>
         </div>
-      </header>
+      </header> */}
 
       {/* Hero Section */}
       <main className="container mx-auto px-4 py-16">
         <div className="text-center mb-16 animate-fade-in">
           <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-EAI Document Intelligence
+            EAI Document Intelligence
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
             EAI Document Intelligence is a secure, Azure-native platform that transforms unstructured content into trusted, actionable data. It auto-classifies documents, extracts fields with high accuracy, validates against your business rules (e.g., dates, signatures, GST), and highlights exceptions with an intuitive viewer for rapid human review.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               onClick={() => router.push('/auth')}
               className="btn-primary text-lg px-8 py-3"
             >
               Get Started
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="lg"
               className="text-lg px-8 py-3"
             >
@@ -102,9 +102,9 @@ EAI Document Intelligence
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {features.map((feature, index) => (
-            <Card 
-              key={feature.title} 
-              className="card-minimal animate-fade-in" 
+            <Card
+              key={feature.title}
+              className="card-minimal animate-fade-in"
               style={{ animationDelay: `${index * 200}ms` }}
             >
               <CardHeader className="text-center">
@@ -128,8 +128,8 @@ EAI Document Intelligence
               <p className="text-muted-foreground mb-6">
                 Join thousands of organizations using EAI Document Intelligence for secure document processing.
               </p>
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 onClick={() => router.push('/auth')}
                 className="btn-primary"
               >
