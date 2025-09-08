@@ -552,7 +552,7 @@ export function FileTable({ folder, refreshTrigger, onRefresh, startPolling }: F
                                           </Badge>
                                         </div>
                                         <div className="grid grid-cols-1 gap-2 md:grid-cols-2 max-h-64 overflow-y-auto pr-2">
-                                          {file.analysisResult.extractedData.keyValuePairs.map((pair: { key: string; value: string; confidence: number }, index: number) => (
+                                          {file.analysisResult.extractedData.keyValuePairs?.map((pair: { key: string; value: string; confidence: number }, index: number) => (
                                             <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                                               <div className="space-y-2">
                                                 <div className="flex justify-between items-start">
@@ -573,7 +573,44 @@ export function FileTable({ folder, refreshTrigger, onRefresh, startPolling }: F
                                                 </div>
                                                 <div className="bg-white border border-gray-200 rounded-md p-2">
                                                   <div className="text-sm font-medium text-gray-900 break-all">
-                                                    {pair.value || 'No value detected'}
+                                                    {/* Custom display logic for pair.value */}
+                                                    {(() => {
+                                                      let displayValue: React.ReactNode = pair.value || "No value detected";
+                                                      try {
+                                                        const parsed = JSON.parse(pair.value);
+                                                        if (parsed && typeof parsed === "object" && "type" in parsed) {
+                                                          switch (parsed.type) {
+                                                            case "date":
+                                                              displayValue = parsed.valueDate
+                                                                ? new Date(parsed.valueDate).toLocaleDateString()
+                                                                : "Invalid date";
+                                                              break;
+                                                            case "boolean":
+                                                              displayValue =
+                                                                "valueBoolean" in parsed
+                                                                  ? parsed.valueBoolean
+                                                                    ? "Yes"
+                                                                    : "No"
+                                                                  : "N/A";
+                                                              break;
+                                                            case "string":
+                                                              displayValue = parsed.valueString || "N/A";
+                                                              break;
+                                                            case "array":
+                                                              displayValue = Array.isArray(parsed.valueArray)
+                                                                ? parsed.valueArray.join(", ")
+                                                                : "N/A";
+                                                              break;
+                                                            default:
+                                                              displayValue = JSON.stringify(parsed);
+                                                          }
+                                                        }
+                                                      } catch (e) {
+                                                        // Not JSON, use raw value
+                                                        return pair.value || "No value detected";
+                                                      }
+                                                      return displayValue;
+                                                    })()}
                                                   </div>
                                                 </div>
                                               </div>

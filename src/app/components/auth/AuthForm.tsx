@@ -20,8 +20,8 @@ export function AuthForm() {
   const setLogin = useAuthStore((state) => state.login)
 
   const handleSubmit = async (type: 'signin' | 'signup', e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     // Simulate loading time
     setTimeout(() => {
@@ -30,25 +30,35 @@ export function AuthForm() {
         id: 'admin',
         email: email || 'admin@gmail.com',
         created_at: new Date().toISOString()
-      }
-      localStorage.setItem('dummy-user', JSON.stringify(dummyUser))
+      };
+      localStorage.setItem('dummy-user', JSON.stringify(dummyUser));
 
-      setLogin() // Set isLogin to true in zustand
-
+      setLogin(email || 'guest@gmail.com'); // Set isLogin to true in zustand
       toast({
         title: type === 'signup' ? "Account created" : "Signed in successfully",
         description: type === 'signup'
           ? "Welcome to EAI Document Intelligence!"
           : "Welcome back to EAI Document Intelligence."
-      })
+      });
 
-      setIsLoading(false)
-      router.push('/dashboard')
-    }, 1000)
+      // Show loading spinner overlay before redirect
+      setTimeout(() => {
+        router.push('/dashboard');
+        setIsLoading(false);
+      }, 700);
+    }, 1000);
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4 relative">
+      {isLoading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+          <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+          </svg>
+        </div>
+      )}
       <div className="w-full max-w-md animate-fade-in">
         {/* Logo */}
         <div className="text-center mb-8">

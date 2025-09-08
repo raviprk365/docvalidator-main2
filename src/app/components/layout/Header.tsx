@@ -1,6 +1,6 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import { FileText, LogOut } from 'lucide-react'
+import { FileText, LogOut, User } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '../../store/authStore'
@@ -10,6 +10,7 @@ import { PageNavigation } from './PageNavigation'
 // ...existing code...
 
 export function Header() {
+  const email = useAuthStore((state) => state.email)
   const { toast } = useToast()
   const router = useRouter()
   const isLogin = useAuthStore((state) => state.isLogin)
@@ -45,6 +46,11 @@ export function Header() {
         {isLogin ? (
           <>
             {/* Desktop logout button */}
+            <div className="hidden md:flex items-center space-x-2">
+              <User className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{email}</span>
+            </div>
+
             <div className="flex items-center space-x-4">
               <Button
                 variant="outline"
