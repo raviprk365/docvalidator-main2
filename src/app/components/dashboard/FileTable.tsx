@@ -412,7 +412,7 @@ export function FileTable({ folder, refreshTrigger, onRefresh, startPolling }: F
             <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">Error loading documents</h3>
             <p className="text-muted-foreground mb-4">{error}</p>
-            <Button onClick={fetchFiles}>Try Again</Button>
+            <Button onClick={() => fetchFiles()}>Try Again</Button>
           </div>
         ) : (
           <div className="rounded-lg border">

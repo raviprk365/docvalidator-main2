@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    unoptimized: true
+  },
+  trailingSlash: false,
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/' : '',
+  basePath: '',
 };
 
 export default nextConfig;

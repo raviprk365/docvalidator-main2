@@ -14,7 +14,8 @@
       "Bash(npx eslint:*)",
       "Bash(mkdir:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(PORT=3011 npm run dev)"
+      "Bash(PORT=3011 npm run dev)",
+      "Bash(az:*)"
     ],
     "deny": [],
     "ask": []

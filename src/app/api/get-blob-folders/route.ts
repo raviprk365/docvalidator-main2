@@ -58,7 +58,7 @@ export async function GET() {
 
         // If no files found but folder exists, get the creation date from any file in the folder
         if (fileCount === 0 && lastModified.getTime() === 0) {
-          for await (const blob of containerClient.listBlobsFlat({ prefix, maxPageSize: 1 })) {
+          for await (const blob of containerClient.listBlobsFlat({ prefix })) {
             if (blob.properties.lastModified) {
               lastModified = blob.properties.lastModified;
               break;

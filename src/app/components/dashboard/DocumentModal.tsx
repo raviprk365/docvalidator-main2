@@ -281,7 +281,7 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
               <Checkbox 
                 id="mark-rfi" 
                 checked={markForRFI}
-                onCheckedChange={setMarkForRFI}
+                onCheckedChange={(checked) => setMarkForRFI(checked === true)}
               />
               <label htmlFor="mark-rfi" className="text-sm font-medium">
                 Mark for RFI
