@@ -489,7 +489,7 @@ export function FileTable({ folder, refreshTrigger, onRefresh, startPolling }: F
                               <Eye className="w-4 h-4" />
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-[90vw] w-[90vw] max-h-[90vh] flex flex-col p-0">
+                          <DialogContent className="!max-w-[95vw] w-[95vw] max-h-[90vh] flex flex-col p-0">
                             <DialogHeader className="flex-shrink-0 px-6 py-4 border-b bg-white">
                               <DialogTitle className="text-xl font-semibold">Analysis Results</DialogTitle>
                               <DialogDescription className="text-sm text-muted-foreground mt-1">

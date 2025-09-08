@@ -260,7 +260,7 @@ export function DocumentModal({ isOpen, onClose, document }: DocumentModalProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] w-[95vw] xl:max-w-[90vw] xl:w-[90vw] 2xl:max-w-[85vw] 2xl:w-[85vw] flex flex-col p-0">
+      <DialogContent className="!max-w-[95vw] max-h-[95vh] w-[95vw] xl:!max-w-[95vw] xl:w-[95vw] 2xl:!max-w-[95vw] 2xl:w-[95vw] flex flex-col p-0">
         {/* Header */}
         <DialogHeader className="flex-1 flex flex-row items-center justify-between p-6 pb-4 space-y-0">
           <div className="flex items-center space-x-4">
