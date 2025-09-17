@@ -3,10 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { analyzerId: string } }
+  { params }: { params: Promise<{ analyzerId: string }> }
 ) {
   try {
-    const { analyzerId } = params;
+    const { analyzerId } = await params;
     const contentUnderstandingService = new ContentUnderstandingService();
     const analyzer = await contentUnderstandingService.getAnalyzer(analyzerId);
 
@@ -25,10 +25,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { analyzerId: string } }
+  { params }: { params: Promise<{ analyzerId: string }> }
 ) {
   try {
-    const { analyzerId } = params;
+    const { analyzerId } = await params;
     const analyzerData = await request.json();
     const url = new URL(request.url);
     const replaceMode = url.searchParams.get('replace') === 'true';
@@ -70,7 +70,7 @@ export async function PUT(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { analyzerId: string } }
+  { params }: { params: Promise<{ analyzerId: string }> }
 ) {
   try {
     // Check for authentication cookie
@@ -81,7 +81,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { analyzerId } = params;
+    const { analyzerId } = await params;
     const updateData = await request.json();
 
     const contentUnderstandingService = new ContentUnderstandingService();
@@ -108,7 +108,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { analyzerId: string } }
+  { params }: { params: Promise<{ analyzerId: string }> }
 ) {
   try {
     // Check for authentication cookie
@@ -119,7 +119,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { analyzerId } = params;
+    const { analyzerId } = await params;
     const contentUnderstandingService = new ContentUnderstandingService();
     await contentUnderstandingService.deleteAnalyzer(analyzerId);
 

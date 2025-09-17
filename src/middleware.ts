@@ -7,6 +7,13 @@ export function middleware(request: NextRequest) {
   if (!userCookie || userCookie.value === undefined) {
     return NextResponse.redirect(new URL("/", request.url));
   }
+  const { pathname } = request.nextUrl;
+
+  if (userCookie && (pathname === "/" || pathname === "/auth")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/folders";
+    return NextResponse.redirect(url);
+  }
 
   return NextResponse.next();
 }

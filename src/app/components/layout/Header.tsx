@@ -1,7 +1,6 @@
 'use client'
-import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/app/components/ui/avatar'
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -9,6 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/app/components/ui/dropdown-menu'
+import { Button } from '@/components/ui/button'
 import { FileText, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -29,12 +29,12 @@ export function Header() {
   useEffect(() => {
     const checkUserCookie = async () => {
       const userCookie = await fetch('/api/login').then(res => res.text());
-      console.log('User Cookie:', userCookie)
+
       if (userCookie && !isLogin) {
         try {
           // Parse the cookie data (assuming it's JSON)
           const userData = JSON.parse(decodeURIComponent(userCookie))
-          console.log(userData)
+
           if (userData.user) {
             // Verify the cookie has the required fields
             if (userData.user.email && userData.user.role) {

@@ -33,7 +33,7 @@ interface Analyzer {
   displayName?: string;
   description?: string;
   fieldSchema?: {
-    fields?: Record<string, any>;
+    fields?: Record<string, unknown>;
   };
 }
 
@@ -285,7 +285,7 @@ export default function UpdateAnalyzer() {
       };
 
       if (analyzer.fieldSchema?.fields) {
-        Object.entries(analyzer.fieldSchema.fields).forEach(([fieldName, fieldConfig]: [string, any]) => {
+        Object.entries(analyzer.fieldSchema.fields).forEach(([fieldName, fieldConfig]: [string, Record<string, unknown>]) => {
 
           const fieldType = apiToUITypeMapping[fieldConfig.type] || fieldConfig.type || 'String';
           const fieldMethod = apiToUIMethodMapping[fieldConfig.method] || fieldConfig.method || 'Extract';
@@ -306,7 +306,7 @@ export default function UpdateAnalyzer() {
           if ((fieldType === 'Table' || fieldType === 'Fixed Table') && columnsOrProperties) {
             // Ensure all properties have required fields with defaults
             const processedProperties: Record<string, { type: string; method: string; description: string; enum?: string[] }> = {};
-            Object.entries(columnsOrProperties).forEach(([propName, propConfig]: [string, any]) => {
+            Object.entries(columnsOrProperties).forEach(([propName, propConfig]: [string, Record<string, unknown>]) => {
               processedProperties[propName] = {
                 type: apiToUITypeMapping[propConfig.type] || propConfig.type || 'String',
                 method: apiToUIMethodMapping[propConfig.method] || propConfig.method || 'Extract',
@@ -432,7 +432,7 @@ export default function UpdateAnalyzer() {
         throw new Error("Please select an analyzer to update");
       }
 
-      let analyzerData: any;
+      let analyzerData: Record<string, unknown>;
       let method: string;
 
       if (replaceMode) {
@@ -700,7 +700,7 @@ export default function UpdateAnalyzer() {
           {!loadingAnalyzerDetails && (
             <form onSubmit={handleSubmit(
               onSubmit,
-              (errors) => {
+              () => {
                 // console.log("UpdateAnalyzer validation errors:", errors);
                 toast.error("Please fix validation errors before submitting");
               }
