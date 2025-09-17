@@ -3,7 +3,7 @@ import { useAuthStore } from '../../store/authStore'
 
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { BarChart3, ChevronLeft, ChevronRight, FolderOpen } from 'lucide-react'
+import { BarChart3, ChevronLeft, ChevronRight, FolderOpen, Settings } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -67,11 +67,19 @@ export function PageNavigation() {
     router.push('/analysis')
   }
 
-  const [menuOpen, setMenuOpen] = useState(false)
-
+  const handleAdmin = () => {
+    router.push('/configuration')
+  }
   const isLogin = useAuthStore((state) => state.isLogin);
+  const role = useAuthStore((state) => state.role);
   const logout = useAuthStore((state) => state.logout);
+  const isAdmin = role === 'admin';
 
+
+  // Don't render if not logged in
+  if (!isLogin) {
+    return null
+  }
 
   return (
     <div className="flex items-center space-x-1">
@@ -121,6 +129,18 @@ export function PageNavigation() {
           <BarChart3 className="w-4 h-4 mr-1" />
           <span className="hidden md:inline">Analysis</span>
         </Button>
+        {isAdmin && (
+          <Button
+            variant={pathname === '/configuration' ? 'default' : 'outline'}
+            size="sm"
+            onClick={handleAdmin}
+            className="p-2 h-8"
+            title="Admin Configuration"
+          >
+            <Settings className="w-4 h-4 mr-1" />
+            <span className="hidden md:inline">Configure</span>
+          </Button>
+        )}
       </div>
 
       {/* Shadcn DropdownMenu for small and medium devices, positioned at right */}
@@ -145,6 +165,12 @@ export function PageNavigation() {
               <BarChart3 className="w-4 h-4" />
               <span>Analysis</span>
             </DropdownMenuItem>
+            {isAdmin && (
+              <DropdownMenuItem onClick={handleAdmin} className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                <span>Admin</span>
+              </DropdownMenuItem>
+            )}
             {isLogin && (
               <DropdownMenuItem onClick={logout} className="flex items-center gap-2 mt-2">
                 <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" /></svg>

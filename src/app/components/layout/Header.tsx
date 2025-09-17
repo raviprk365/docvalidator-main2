@@ -1,28 +1,76 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import { FileText, LogOut, User } from 'lucide-react'
+import { Avatar, AvatarFallback } from '@/app/components/ui/avatar'
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/app/components/ui/dropdown-menu'
+import { FileText, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { useToast } from '../ui/use-toast'
 import { PageNavigation } from './PageNavigation'
-
-// ...existing code...
 
 export function Header() {
   const email = useAuthStore((state) => state.email)
   const { toast } = useToast()
   const router = useRouter()
   const isLogin = useAuthStore((state) => state.isLogin)
+  const login = useAuthStore((state) => state.login)
   const logout = useAuthStore((state) => state.logout)
 
-  const handleSignOut = () => {
+  // Check for existing cookie on component mount
+  useEffect(() => {
+    const checkUserCookie = async () => {
+      const userCookie = await fetch('/api/login').then(res => res.text());
+      console.log('User Cookie:', userCookie)
+      if (userCookie && !isLogin) {
+        try {
+          // Parse the cookie data (assuming it's JSON)
+          const userData = JSON.parse(decodeURIComponent(userCookie))
+          console.log(userData)
+          if (userData.user) {
+            // Verify the cookie has the required fields
+            if (userData.user.email && userData.user.role) {
+              // Set user in Zustand store
+              login(userData.user.email, userData.user.role)
+            }
+          } else {
+            router.push('/auth')
+          }
+        } catch (error) {
+          console.error('Error parsing user cookie:', error)
+
+        }
+      }
+    }
+
+    checkUserCookie()
+  }, [isLogin, login])
+
+  const handleSignOut = async () => {
+    // Clear the cookie
+    await fetch('/api/logout', { method: 'POST' })
+    // Clear Zustand store
     logout()
+
     toast({
       title: "Signed out successfully",
       description: "You have been logged out of EAI Document Intelligence."
     })
     router.push('/')
+  }
+
+  // Get first letter of email for avatar
+  const getAvatarInitial = (email: string | null) => {
+    if (!email) return 'U'
+    return email.charAt(0).toUpperCase()
   }
 
   return (
@@ -44,37 +92,46 @@ export function Header() {
         </div>
 
         {isLogin ? (
-          <>
-            {/* Desktop logout button */}
-            <div className="hidden md:flex items-center space-x-2">
-              <User className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium">{email}</span>
-            </div>
+          <div className="flex items-center">
+            {/* Mobile logout button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSignOut}
+              className="flex md:hidden items-center space-x-2"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Logout</span>
+            </Button>
 
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSignOut}
-                className="hidden md:flex items-center space-x-2"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Logout</span>
-              </Button>
-            </div>
-            {/* Mobile logout button, right side */}
-            {/* <div className="fixed top-4 right-4 z-50 sm:hidden">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSignOut}
-                className="flex items-center space-x-2"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Logout</span>
-              </Button>
-            </div> */}
-          </>
+            {/* Desktop Avatar dropdown menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="hidden md:flex h-10 w-10 rounded-full p-0">
+                  <Avatar className="h-9 w-9">
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                      {getAvatarInitial(email)}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">Account</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         ) : (
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button

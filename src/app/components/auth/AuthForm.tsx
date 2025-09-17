@@ -2,50 +2,89 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { Eye, EyeOff, FileText, Lock, Mail } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { useToast } from '../ui/use-toast'
 
+interface User {
+  id: string;
+  email: string;
+  password: string;
+  role: string;
+  created_at: string;
+}
+
+const adminUser: User = {
+  id: 'admin',
+  email: 'admin@nexapproveiq.com.au',
+  password: "NexAdmin@2025",
+  role: 'admin',
+  created_at: new Date().toISOString()
+};
+const user: User = {
+  id: 'user',
+  email: 'serviceaccount@nexapproveiq.com.au',
+  password: "NexUser@2025",
+  role: 'user',
+  created_at: new Date().toISOString()
+};
 export function AuthForm() {
+
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast()
   const router = useRouter()
 
   const setLogin = useAuthStore((state) => state.login)
 
-  const handleSubmit = async (type: 'signin' | 'signup', e: React.FormEvent) => {
+  const handleSubmit = async (type: 'signin', e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate loading time
-    setTimeout(() => {
-      // Set dummy user in localStorage
-      const dummyUser = {
-        id: 'admin',
-        email: email || 'admin@gmail.com',
-        created_at: new Date().toISOString()
-      };
-      localStorage.setItem('dummy-user', JSON.stringify(dummyUser));
-
-      setLogin(email || 'guest@gmail.com'); // Set isLogin to true in zustand
-      toast({
-        title: type === 'signup' ? "Account created" : "Signed in successfully",
-        description: type === 'signup'
-          ? "Welcome to EAI Document Intelligence!"
-          : "Welcome back to EAI Document Intelligence."
+    const setCookie = async (user: User) => {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ "email": user.email, "role": user.role }),
       });
+      return response;
+    };
+    if (email === adminUser.email && password === adminUser.password) {
+      setLogin(adminUser.email, adminUser.role); // Set isLogin to true in zustand
+      setCookie(adminUser);
+      toast({
+        title: "Signed in successfully",
+        description: "Welcome back to EAI Document Intelligence."
+      });
+      router.push('/dashboard'); // Navigate to dashboard
+    } else if (email === user.email && password === user.password) {
+      setLogin(user.email, user.role);
+      setCookie(user);
+      toast({
+        title: "Signed in successfully",
+        description: "Welcome back to EAI Document Intelligence."
+      });
+      router.push('/dashboard'); // Navigate to dashboard
+    } else {
+      toast({
+        title: "Authentication Failed",
+        description: "Invalid email or password. Please try again.",
+      });
+      setError("Invalid email or password");
+      setIsLoading(false);
+    }
 
-      // Show loading spinner overlay before redirect
-      setTimeout(() => {
-        router.push('/dashboard');
-        setIsLoading(false);
-      }, 700);
+    // // Simulate loading time
+    setTimeout(() => {
+      setIsLoading(false);
     }, 1000);
   }
 
@@ -73,17 +112,22 @@ export function AuthForm() {
           <CardHeader className="text-center">
             <CardTitle>Welcome</CardTitle>
             <CardDescription>
-              Sign in to your account or create a new one
+              Sign in to your account
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
+              {/* <TabsList className="grid w-full grid-cols-1 mb-6"> */}
+              {/* <TabsTrigger value="signin">Sign In</TabsTrigger> */}
+              {/* <TabsTrigger value="signup">Sign Up</TabsTrigger> */}
+              {/* </TabsList> */}
 
               <TabsContent value="signin">
+                {error && (
+                  <div className="mb-4 p-3 text-sm text-red-700 bg-red-100 rounded-md">
+                    {error}
+                  </div>
+                )}
                 <form onSubmit={(e) => handleSubmit('signin', e)} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signin-email">Email</Label>
@@ -130,7 +174,7 @@ export function AuthForm() {
                 </form>
               </TabsContent>
 
-              <TabsContent value="signup">
+              {/* <TabsContent value="signup">
                 <form onSubmit={(e) => handleSubmit('signup', e)} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
@@ -179,7 +223,7 @@ export function AuthForm() {
                     {isLoading ? "Creating account..." : "Create Account"}
                   </Button>
                 </form>
-              </TabsContent>
+              </TabsContent> */}
             </Tabs>
           </CardContent>
         </Card>
