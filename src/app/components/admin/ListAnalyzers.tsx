@@ -301,6 +301,10 @@ export default function ListAnalyzers() {
                   <p className="text-sm text-gray-600">{selectedAnalyzer.analyzerId}</p>
                 </div>
                 <div>
+                  <label className="text-sm font-medium">Display Name:</label>
+                  <p className="text-sm text-gray-600">{selectedAnalyzer.displayName || "N/A"}</p>
+                </div>
+                <div>
                   <label className="text-sm font-medium">Created:</label>
                   <p className="text-sm text-gray-600">
                     {selectedAnalyzer.createdAt
@@ -316,6 +320,14 @@ export default function ListAnalyzers() {
                       : "N/A"}
                   </p>
                 </div>
+              </div>
+
+              {/* Description field - full width */}
+              <div>
+                <label className="text-sm font-medium">Description:</label>
+                <p className="text-sm text-gray-600 mt-1 p-3 bg-gray-50 rounded-lg border">
+                  {selectedAnalyzer.description || "No description provided"}
+                </p>
               </div>
 
               {selectedAnalyzer.fieldSchema?.fields && (
