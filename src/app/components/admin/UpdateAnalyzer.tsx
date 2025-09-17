@@ -349,7 +349,7 @@ export default function UpdateAnalyzer() {
         { name: "", type: "String", method: "Extract", description: "", properties: [], enum: [""] }
       ];
 
-      formData.fields = convertedFields;
+      formData.fields = convertedFields as any;
       reset(formData);
     } catch (err) {
       console.error(err instanceof Error ? err.message : "Failed to load analyzer details");
