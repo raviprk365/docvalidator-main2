@@ -586,7 +586,7 @@ export default function CreateAnalyzer() {
                   {(fieldType === 'Table' || fieldType === 'Fixed Table') && (
                     <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                       <PropertyFieldArray
-                        control={control}
+                        control={control as any}
                         fieldIndex={index}
                         fieldType={fieldType}
                       />
