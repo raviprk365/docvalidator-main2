@@ -2,37 +2,85 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 import { Dashboard as DashboardComponent } from '../components/dashboard/Dashboard'
-type DummyUser = {
+import { useAuthStore } from '../store/authStore'
+
+type User = {
   id: string
   email: string
-  created_at: string
+  role: string
 }
 
 const DashboardContent = () => {
-  const [user, setUser] = useState<DummyUser | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const navigate = useRouter()
   const searchParams = useSearchParams()
   const folder = searchParams.get('folder')
+  
+  // Use auth store
+  const isLogin = useAuthStore((state) => state.isLogin)
+  const email = useAuthStore((state) => state.email)
+  const role = useAuthStore((state) => state.role)
+  const login = useAuthStore((state) => state.login)
 
   useEffect(() => {
-    // Check for dummy user
-    const dummyUserData = localStorage.getItem('dummy-user')
-    if (!dummyUserData) {
-      navigate.push('/auth')
-      return
-    } else {
-      setUser(JSON.parse(dummyUserData))
+    const checkAuthentication = async () => {
+      try {
+        // Check if user is already logged in via auth store
+        if (isLogin && email && role) {
+          setUser({ id: '1', email, role })
+          // If no folder parameter, redirect to folders page
+          if (!folder) {
+            navigate.push('/folders')
+            return
+          }
+          setLoading(false)
+          return
+        }
+
+        // Check for user cookie via API
+        const response = await fetch('/api/login')
+        const userCookie = await response.text()
+
+        if (userCookie && userCookie !== 'No user cookie found') {
+          try {
+            // Parse the cookie data
+            const userData = JSON.parse(decodeURIComponent(userCookie))
+
+            if (userData.user?.email && userData.user?.role) {
+              // Set user in Zustand store
+              login(userData.user.email, userData.user.role)
+              setUser({ id: '1', email: userData.user.email, role: userData.user.role })
+              
+              // If no folder parameter, redirect to folders page
+              if (!folder) {
+                navigate.push('/folders')
+                return
+              }
+            } else {
+              navigate.push('/auth')
+              return
+            }
+          } catch (error) {
+            console.error('Error parsing user cookie:', error)
+            navigate.push('/auth')
+            return
+          }
+        } else {
+          navigate.push('/auth')
+          return
+        }
+      } catch (error) {
+        console.error('Error checking authentication:', error)
+        navigate.push('/auth')
+        return
+      }
+
+      setLoading(false)
     }
 
-    // If no folder parameter, redirect to applications page
-    if (!folder) {
-      navigate.push('/folders')
-      return
-    }
-
-    setLoading(false)
-  }, [navigate, folder])
+    checkAuthentication()
+  }, [navigate, folder, isLogin, email, role, login])
 
   if (loading) {
     return (

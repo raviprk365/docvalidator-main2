@@ -5,7 +5,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from "@/app/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
-import { Eye, RefreshCw, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Eye, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import DataTable from 'react-data-table-component';
 
@@ -31,6 +31,41 @@ interface Analyzer {
 const capitalizeFirstLetter = (str: string): string => {
   if (!str) return str;
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+};
+
+// Component for expandable text with truncation
+const ExpandableText = ({ text, maxLength = 100 }: { text: string; maxLength?: number }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  if (!text || text === "-") return <span>-</span>;
+  
+  if (text.length <= maxLength) {
+    return <span>{text}</span>;
+  }
+
+  return (
+    <div className="space-y-1">
+      <span>
+        {isExpanded ? text : `${text.substring(0, maxLength)}...`}
+      </span>
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center text-xs text-blue-600 hover:text-blue-800 transition-colors"
+      >
+        {isExpanded ? (
+          <>
+            <ChevronDown className="h-3 w-3 mr-1" />
+            Show less
+          </>
+        ) : (
+          <>
+            <ChevronRight className="h-3 w-3 mr-1" />
+            Show more
+          </>
+        )}
+      </button>
+    </div>
+  );
 };
 
 export default function ListAnalyzers() {
@@ -62,8 +97,15 @@ export default function ListAnalyzers() {
 
       const data = await response.json();
       const analyzerData = data.analyzers || [];
-      setAnalyzers(analyzerData);
-      setFilteredAnalyzers(analyzerData);
+      
+      // Filter out analyzers that start with 'auto' or 'prebuilt'
+      const filteredData = analyzerData.filter((analyzer: Analyzer) => 
+        !analyzer.analyzerId.toLowerCase().startsWith('auto') && 
+        !analyzer.analyzerId.toLowerCase().startsWith('prebuilt')
+      );
+      
+      setAnalyzers(filteredData);
+      setFilteredAnalyzers(filteredData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch analyzers");
     } finally {
@@ -350,8 +392,13 @@ export default function ListAnalyzers() {
                               {(fieldConfig as { fieldName?: string }).fieldName || fieldKey}
                             </TableCell>
                             <TableCell>
-                              {(fieldConfig as { fieldDescription?: string; description?: string }).fieldDescription ||
-                                (fieldConfig as { fieldDescription?: string; description?: string }).description || "-"}
+                              <ExpandableText
+                                text={
+                                  (fieldConfig as { fieldDescription?: string; description?: string }).fieldDescription ||
+                                  (fieldConfig as { fieldDescription?: string; description?: string }).description || "-"
+                                }
+                                maxLength={80}
+                              />
                             </TableCell>
                             <TableCell>
                               {capitalizeFirstLetter((fieldConfig as { method?: string }).method || "-")}

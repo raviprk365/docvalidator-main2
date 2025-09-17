@@ -217,7 +217,15 @@ export default function UpdateAnalyzer() {
       }
 
       const data = await response.json();
-      setAvailableAnalyzers(data.analyzers || []);
+      const analyzerData = data.analyzers || [];
+      
+      // Filter out analyzers that start with 'auto' or 'prebuilt'
+      const filteredData = analyzerData.filter((analyzer: any) => 
+        !analyzer.analyzerId.toLowerCase().startsWith('auto') && 
+        !analyzer.analyzerId.toLowerCase().startsWith('prebuilt')
+      );
+      
+      setAvailableAnalyzers(filteredData);
     } catch (err) {
       console.error(err instanceof Error ? err.message : "Failed to fetch analyzers");
     } finally {
@@ -802,7 +810,10 @@ export default function UpdateAnalyzer() {
                         )}
                       </div>
 
-                      <div className={`grid grid-cols-1 gap-3 ${field.type === 'Table' || field.type === 'Fixed Table' ? 'md:grid-cols-3' : 'md:grid-cols-4'}`}>
+                      <div className={`grid gap-3 ${field.type === 'Table' || field.type === 'Fixed Table'
+                          ? 'grid-cols-1 md:grid-cols-[1fr_2fr_1fr] lg:grid-cols-[2fr_3fr_1.5fr]'
+                          : 'grid-cols-1 md:grid-cols-[1fr_2fr_1fr_1fr] lg:grid-cols-[2fr_3fr_1.5fr_1.5fr]'
+                        }`}>
                         <div>
                           <label className="text-xs font-medium mb-1 block">
                             Field Name *
@@ -858,9 +869,9 @@ export default function UpdateAnalyzer() {
                           <div>
                             <label className="text-xs font-medium mb-1 block">
                               Method
-                              <span className="text-xs text-gray-500 ml-1">
+                              {/* <span className="text-xs text-gray-500 ml-1">
                                 (Available: {getAllowedMethods(field.type).join(', ')})
-                              </span>
+                              </span> */}
                             </label>
                             <Select
                               value={field.method || "Extract"}

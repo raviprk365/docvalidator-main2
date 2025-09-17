@@ -28,26 +28,21 @@ export function Header() {
   // Check for existing cookie on component mount
   useEffect(() => {
     const checkUserCookie = async () => {
-      const userCookie = await fetch('/api/login').then(res => res.text());
+      try {
+        const response = await fetch('/api/login');
+        const data = await response.json();
 
-      if (userCookie && !isLogin) {
-        try {
-          // Parse the cookie data (assuming it's JSON)
-          const userData = JSON.parse(decodeURIComponent(userCookie))
-
-          if (userData.user) {
-            // Verify the cookie has the required fields
-            if (userData.user.email && userData.user.role) {
-              // Set user in Zustand store
-              login(userData.user.email, userData.user.role)
-            }
-          } else {
-            router.push('/auth')
+        if (data.user && !isLogin) {
+          // Verify the cookie has the required fields
+          if (data.user.email && data.user.role) {
+            // Set user in Zustand store
+            login(data.user.email, data.user.role)
           }
-        } catch (error) {
-          console.error('Error parsing user cookie:', error)
-
         }
+        // Note: We don't redirect to /auth here as this would interfere with the landing page
+        // The redirect logic is handled by individual pages and middleware
+      } catch (error) {
+        console.error('Error checking user cookie:', error)
       }
     }
 

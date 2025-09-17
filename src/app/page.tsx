@@ -4,35 +4,70 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Button } from './components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card'
-import { supabase, type User } from './lib/supabase'
+import { useAuthStore } from './store/authStore'
+
+type User = {
+  email: string
+  role: string
+}
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
+  
+  // Use auth store
+  const isLogin = useAuthStore((state) => state.isLogin)
+  const email = useAuthStore((state) => state.email)
+  const role = useAuthStore((state) => state.role)
+  const login = useAuthStore((state) => state.login)
 
   useEffect(() => {
-    // Check if user is already authenticated
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        router.push('/folders')
-      } else {
-        setUser(null)
-      }
-    })
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (session?.user) {
+    const checkAuthentication = async () => {
+      try {
+        // Check if user is already logged in via auth store
+        if (isLogin && email && role) {
+          setUser({ email, role })
           router.push('/folders')
-        } else {
-          setUser(null)
+          return
         }
-      }
-    )
 
-    return () => subscription.unsubscribe()
-  }, [router])
+        // Check for user cookie via API
+        const response = await fetch('/api/login')
+        const data = await response.json()
+
+        if (data.user?.email && data.user?.role) {
+          // Set user in Zustand store
+          login(data.user.email, data.user.role)
+          setUser({ email: data.user.email, role: data.user.role })
+          router.push('/folders')
+          return
+        }
+        
+        // No valid authentication found, stay on landing page
+        setUser(null)
+      } catch (error) {
+        console.error('Error checking authentication:', error)
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkAuthentication()
+  }, [router, isLogin, email, role, login])
+
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
   const features = [
     {
