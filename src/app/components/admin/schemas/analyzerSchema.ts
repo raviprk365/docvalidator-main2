@@ -34,7 +34,7 @@ const propertyFormSchema = z.object({
 const arrayItemSchema = z.object({
   type: z.enum(primitiveTypes),
   method: z.enum(methods),
-  properties: z.record(propertySchema).optional(),
+  properties: z.record(z.string(), propertySchema).optional(),
 });
 
 // Main field schema
@@ -124,11 +124,10 @@ export const methodValidationRules = {
 } as const;
 
 export const getAllowedMethods = (fieldType: string): string[] => {
-  return (
-    methodValidationRules[fieldType as keyof typeof methodValidationRules] || [
-      "Extract",
-    ]
-  );
+  const methods = methodValidationRules[fieldType as keyof typeof methodValidationRules] || [
+    "Extract",
+  ];
+  return [...methods];
 };
 
 export { methods, primitiveTypes };
