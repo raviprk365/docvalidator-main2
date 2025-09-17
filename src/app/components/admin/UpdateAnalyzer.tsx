@@ -174,7 +174,7 @@ export default function UpdateAnalyzer() {
     handleSubmit,
     reset
   } = useForm<AnalyzerFormData>({
-    resolver: zodResolver(analyzerSchema),
+    resolver: zodResolver(analyzerSchema) as any,
     defaultValues: {
       analyzerId: "",
       displayName: "",
@@ -219,7 +219,7 @@ export default function UpdateAnalyzer() {
       const data = await response.json();
       setAvailableAnalyzers(data.analyzers || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch analyzers");
+      console.error(err instanceof Error ? err.message : "Failed to fetch analyzers");
     } finally {
       setLoadingAnalyzers(false);
     }
@@ -285,10 +285,10 @@ export default function UpdateAnalyzer() {
       };
 
       if (analyzer.fieldSchema?.fields) {
-        Object.entries(analyzer.fieldSchema.fields).forEach(([fieldName, fieldConfig]: [string, Record<string, unknown>]) => {
+        Object.entries(analyzer.fieldSchema.fields).forEach(([fieldName, fieldConfig]: [string, any]) => {
 
-          const fieldType = apiToUITypeMapping[fieldConfig.type] || fieldConfig.type || 'String';
-          const fieldMethod = apiToUIMethodMapping[fieldConfig.method] || fieldConfig.method || 'Extract';
+          const fieldType = apiToUITypeMapping[fieldConfig.type as string] || fieldConfig.type || 'String';
+          const fieldMethod = apiToUIMethodMapping[fieldConfig.method as string] || fieldConfig.method || 'Extract';
           const allowedMethods = getAllowedMethods(fieldType);
 
           // Ensure the method is valid for the field type, fallback to first allowed method
@@ -298,7 +298,7 @@ export default function UpdateAnalyzer() {
             name: fieldName,
             type: fieldType,
             method: validMethod,
-            description: fieldConfig.description || fieldConfig.fieldDescription || ""
+            description: (fieldConfig.description as string) || (fieldConfig.fieldDescription as string) || ""
           };
 
           // Load table columns or object properties
@@ -306,12 +306,12 @@ export default function UpdateAnalyzer() {
           if ((fieldType === 'Table' || fieldType === 'Fixed Table') && columnsOrProperties) {
             // Ensure all properties have required fields with defaults
             const processedProperties: Record<string, { type: string; method: string; description: string; enum?: string[] }> = {};
-            Object.entries(columnsOrProperties).forEach(([propName, propConfig]: [string, Record<string, unknown>]) => {
+            Object.entries(columnsOrProperties).forEach(([propName, propConfig]: [string, any]) => {
               processedProperties[propName] = {
-                type: apiToUITypeMapping[propConfig.type] || propConfig.type || 'String',
-                method: apiToUIMethodMapping[propConfig.method] || propConfig.method || 'Extract',
-                description: propConfig.description || '',
-                ...(propConfig.enum && { enum: propConfig.enum })
+                type: apiToUITypeMapping[propConfig.type as string] || propConfig.type || 'String',
+                method: apiToUIMethodMapping[propConfig.method as string] || propConfig.method || 'Extract',
+                description: (propConfig.description as string) || '',
+                ...(propConfig.enum && { enum: propConfig.enum as string[] })
               };
             });
             fieldData.properties = processedProperties;
@@ -319,12 +319,12 @@ export default function UpdateAnalyzer() {
 
           // Load array items if field is array type
           if (fieldType === 'array' && fieldConfig.items) {
-            fieldData.items = fieldConfig.items;
+            fieldData.items = fieldConfig.items as any;
           }
 
           // Load enum if method is Classify
           if (validMethod === 'Classify' && fieldConfig.enum) {
-            fieldData.enum = fieldConfig.enum;
+            fieldData.enum = fieldConfig.enum as string[];
           }
 
           analyzerFields.push(fieldData);
@@ -334,7 +334,7 @@ export default function UpdateAnalyzer() {
       // Convert analyzerFields to react-hook-form format and set the form data
       const convertedFields = analyzerFields.length > 0 ? analyzerFields.map(field => ({
         name: field.name,
-        type: field.type,
+        type: field.type as any,
         method: field.method,
         description: field.description,
         properties: field.properties ? Object.entries(field.properties).map(([name, prop]) => ({
@@ -352,7 +352,7 @@ export default function UpdateAnalyzer() {
       formData.fields = convertedFields;
       reset(formData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load analyzer details");
+      console.error(err instanceof Error ? err.message : "Failed to load analyzer details");
     } finally {
       setLoadingAnalyzerDetails(false);
     }
@@ -390,7 +390,7 @@ export default function UpdateAnalyzer() {
         // Table types don't have methods
         updatedField.method = '';
         delete updatedField.enum;
-      } else if (!allowedMethods.includes(updatedField.method)) {
+      } else if (!allowedMethods.includes(updatedField.method || '')) {
         updatedField.method = allowedMethods[0] || 'Extract';
         // Remove enum if changing away from classify, or initialize if changing to classify
         if (updatedField.method !== 'Classify') {
@@ -419,7 +419,7 @@ export default function UpdateAnalyzer() {
       }
     }
 
-    updatedField[property] = value;
+    (updatedField as any)[property] = value;
     update(index, updatedField);
   };
 
@@ -649,7 +649,7 @@ export default function UpdateAnalyzer() {
                 label: analyzer.displayName || analyzer.analyzerId,
                 analyzer
               }))}
-              formatOptionLabel={(option) => (
+              formatOptionLabel={(option: any) => (
                 <div className="flex flex-col py-1">
                   <span className="font-medium text-sm">
                     {option.label}
@@ -950,7 +950,7 @@ export default function UpdateAnalyzer() {
                       )}
 
                       {/* Object/Table Properties */}
-                      {(field.type === 'object' || field.type === 'Table' || field.type === 'Fixed Table') && (
+                      {(field.type === 'Table' || field.type === 'Fixed Table') && (
                         <div className="mt-4 p-4 border rounded-lg bg-gray-50">
                           <div className="flex items-center justify-between mb-3">
                             <h5 className="text-sm font-medium">
