@@ -585,7 +585,6 @@ export default function CreateAnalyzer() {
                   {/* Table Properties */}
                   {(fieldType === 'Table' || fieldType === 'Fixed Table') && (
                     <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                      {/* @ts-expect-error - Complex react-hook-form control type compatibility */}
                       <PropertyFieldArray
                         control={control}
                         fieldIndex={index}
