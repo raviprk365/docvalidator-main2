@@ -9,7 +9,8 @@ import {
   DropdownMenuTrigger,
 } from '@/app/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { FileText, LogOut } from 'lucide-react'
+import { LogOut } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
@@ -74,11 +75,19 @@ export function Header() {
         <div className="flex items-center space-x-6">
           <Link href="/dashboard" className='ssr-only'>
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <FileText className="w-5 h-5 text-primary-foreground" />
-              </div>
+
+              {/* Use Next.js Image for optimization */}
+              <Image
+                src="/NexApprove-logo.jpg"
+                alt="NexApprove Logo"
+                width={50}
+                height={60}
+                className="object-contain h-max-auto"
+                priority
+              />
+
               <div>
-                <h1 className="text-lg font-semibold">EAI Document Intelligence</h1>
+                <h1 className="text-lg font-semibold">NexApprove - Document Intelligence</h1>
                 <p className="text-sm text-muted-foreground">Azure-Native Platform</p>
               </div>
             </div>

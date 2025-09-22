@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
-import { Eye, EyeOff, FileText, Lock, Mail } from 'lucide-react'
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
@@ -101,10 +102,18 @@ export function AuthForm() {
       <div className="w-full max-w-md animate-fade-in">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <FileText className="w-8 h-8 text-primary-foreground" />
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Image
+              src="/NexApprove-logo.jpg"
+              alt="NexApprove Logo"
+              width={70}
+              height={70}
+              className="object-contain w-16 h-16 rounded-2xl mx-auto mb-4"
+              priority
+            />
           </div>
-          <h1 className="text-2xl font-semibold">EAI Document Intelligence</h1>
+
+          <h1 className="text-2xl font-semibold">NexApprove - Document Intelligence</h1>
           <p className="text-muted-foreground">Azure-Native Platform</p>
         </div>
 
